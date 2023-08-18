@@ -1,20 +1,33 @@
+const path = require('path');
 const express = require('express');
 const mysql = require('mysql2/promise');
+const cookieParser = require('cookie-parser');
 const app = express();
 
 // Serve static files from the "public" directory
 app.use(express.static('public'));
+app.use(express.static('/'));
 
 // Parse JSON and URL-encoded query parameters
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Parse cookies
+app.use(cookieParser());
 
 // Connect to the MySQL database
 const pool = mysql.createPool({
   host: 'localhost',
   user: 'tiny',
   password: 'password',
-  database: 'mydatabase'
+  database: 'mydb'
+});
+
+// Create a connection to the MySQL server
+const connection = mysql.createConnection({
+  host: 'localhost',
+  user: 'tiny',
+  password: 'password'
 });
 
 // Define a router for the registration form submissions
@@ -62,20 +75,24 @@ loginRouter.post('/', async (req, res) => {
 });
 app.use('/login', loginRouter);
 
-// Route the root URL to the index.html file
-app.get('/', (req, res) => {
-  res.sendFile('index.html', { root: __dirname });
+
+
+// Define a router for all HTML pages
+const htmlRouter = express.Router();
+htmlRouter.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '/', 'index.html'));
 });
-
-// Route the register URL to the register.html file
-app.get('/register', (req, res) => {
-  res.sendFile('register.html', { root: __dirname });
+htmlRouter.get('/register', (req, res) => {
+  res.sendFile(path.join(__dirname, '/', 'register.html'));
 });
+htmlRouter.get('/login', (req, res) => {
+  res.sendFile(path.join(__dirname, '/', 'login.html'));
+});
+app.use('/', htmlRouter);
 
-
-// Route the login URL to the login.html file
-app.get('/login', (req, res) => {
-  res.sendFile('login.html', { root: __dirname });
+// Define a 404 page for non-existent pages
+app.use((req, res) => {
+  res.status(404).sendFile(path.join(__dirname, '/', '404.html'));
 });
 
 
@@ -84,3 +101,5 @@ app.get('/login', (req, res) => {
 app.listen(3000, () => {
   console.log('Server started on port 3000');
 });
+
+exports.pool = pool;
