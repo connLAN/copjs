@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Register</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f2f2f2;
+      }
+      h1 {
+        text-align: center;
+        margin-top: 50px;
+      }
+      form {
+        max-width: 500px;
+        margin: 0 auto;
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      label {
+        display: block;
+        margin-bottom: 10px;
+      }
+      input[type="text"],
+      input[type="email"],
+      input[type="password"] {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        font-size: 16px;
+      }
+      button[type="submit"] {
+        background-color: #4CAF50;
+        color: #fff;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+      button[type="submit"]:hover {
+        background-color: #3e8e41;
+      }
+      input:invalid {
+        border-color: red;
+      }
+      input:valid {
+        border-color: green;
+      }
+      input:invalid + span::before {
+        content: "✖ ";
+        color: red;
+      }
+      input:valid + span::before {
+        content: "✓ ";
+        color: green;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Register</h1>
+    <form action="/register" method="POST">
+      <label for="name">Name:</label>
+      <input type="text" id="name" name="name" required>
+      <span></span>
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email" required>
+      <span></span>
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password" pattern=".{8,}" title="Password must be at least 8 characters long" required>
+      <span></span>
+      <button type="submit">Register</button>
+    </form>
+    <script>
+      const form = document.querySelector('form');
+      const nameInput = document.getElementById('name');
+      const emailInput = document.getElementById('email');
+      const passwordInput = document.getElementById('password');
+
+      form.addEventListener('submit', (event) => {
+        // Prevent the form from submitting
+        event.preventDefault();
+
+        // Validate the form inputs
+        if (nameInput.validity.valid && emailInput.validity.valid && passwordInput.validity.valid) {
+          // Create a new user object with the form data
+          const user = {
+            name: nameInput.value,
+            email: emailInput.value,
+            password: passwordInput.value
+          };
+
+          // Send a POST request to the server to register the user
+          fetch('/register', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(user)
+          })
+          .then(response => response.text())
+          .then(data => {
+            // Display a success message
+            alert(data);
+
+            // Set a cookie to remember the user's name
+            document.cookie = `name=${user.name}; max-age=3600; path=/`;
+
+            // Redirect to the home page
+            window.location.href = '/';
+          })
+          .catch(error => {
+            console.error(error);
+            alert('An error occurred while registering the user');
+          });
+        }
+      });
+    </script>
+  </body>
+</html>
