@@ -23,11 +23,19 @@ connection.connect((err) => {
       console.log('Using mydb database');
 
       // Create the user table if it doesn't exist
-      const sql = 'CREATE TABLE IF NOT EXISTS users (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), email VARCHAR(255), password VARCHAR(255))';
+      const sql = 'CREATE TABLE IF NOT EXISTS users (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), email VARCHAR(255), password VARCHAR(255), email_verified BOOLEAN DEFAULT false, register_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP);';
       connection.query(sql, (err, result) => {
         if (err) throw err;
         console.log('User table created or already exists');
       });
+
+      // Create the email verification table if it doesn't exist
+      const sql2 = 'CREATE TABLE IF NOT EXISTS email_verification (id INT AUTO_INCREMENT PRIMARY KEY, email VARCHAR(255), token VARCHAR(255), expiry_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP);';
+      connection.query(sql2, (err, result) => {
+        if (err) throw err;
+        console.log('Email verification table created or already exists');
+      });
+
     });
   });
 });

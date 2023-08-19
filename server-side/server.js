@@ -35,6 +35,25 @@ const connection = mysql.createConnection({
   password: 'password'
 });
 
+// Connect to the MySQL server and create the "mydb" database and users table
+// call database.js
+require('./database');
+
+
+const nodemailer = require('nodemailer');
+// Create a transporter object using SMTP transport
+const transporter = nodemailer.createTransport({
+  host: 'smtp.qq.com',
+  port: 587,
+  secure: false,
+  auth: {
+    user: '44514285@qq.com',
+    pass: 'msthnqahawcqbjed'
+  }
+});
+
+
+
 // Define a router for the registration form submissions
 const registerRouter = express.Router();
 registerRouter.post('/', async (req, res) => {
@@ -50,6 +69,44 @@ registerRouter.post('/', async (req, res) => {
     // Insert user information into the "users" table
     const [result] = await pool.query('INSERT INTO users (name, email, password) VALUES (?, ?, ?)', [name, email, hashedPassword]);
     console.log(result);
+   
+    // Set a cookie to remember the user's email
+    res.cookie('email', email, { maxAge: 3600000, httpOnly: true });
+
+
+    // Generate a verification token for the user, write into the database , and sent it to the user's email address
+    const crypto = require('crypto');
+
+    const token = crypto.randomBytes(16).toString('hex');
+    await pool.query('INSERT INTO email_verification (email, token) VALUES (?, ?)', [email, token]);
+    console.log(token);
+   
+   
+    // Send the verification token to the user's email address
+
+
+    // Define the email message
+    const mailOptions = {
+      from: '44514285@qq.com',
+      to: email,
+      subject: 'Verification Token',
+      text: `Your verification token is ${token}` + '\n'
+       + 'Please click the link below to verify your email address:' + 'http://192.168.2.180:3000/verify?email=' + email + '&token=' + token
+    };
+
+    // todo: add global config of web domain in the future instead of hard coding
+
+    // Send the email
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error(error);
+      } else {
+        console.log('Email sent: ' + info.response);
+      }
+    });
+   
+   
+   
     res.send('Registration successful!');
   } catch (error) {
     console.error(error);
@@ -59,6 +116,27 @@ registerRouter.post('/', async (req, res) => {
 
 // Mount the router on the app
 app.use('/register', registerRouter);
+
+
+app.get('/verify', async (req, res) => {
+  const { email, token } = req.query;
+
+  // Check if the verification token is valid
+  const result = await pool.query('SELECT * FROM email_verification WHERE email = ? AND token = ?', [email, token]);
+  if (result.length === 0) {
+    // Invalid token
+    return res.status(400).send('Invalid verification token');
+  }
+
+  // Update the user's email address as verified
+  await pool.query('UPDATE users SET email_verified = true WHERE email = ?', [email]);
+
+  // Delete the verification token from the database
+  await pool.query('DELETE FROM email_verification WHERE email = ?', [email]);
+
+  // Redirect the user to the login page
+  res.redirect('/login');
+});
 
 
 
