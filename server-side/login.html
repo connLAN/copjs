@@ -22,6 +22,7 @@
       label {
         display: block;
         margin-bottom: 10px;
+        font-weight: bold;
       }
       input[type="email"],
       input[type="password"] {
@@ -30,7 +31,11 @@
         border: 1px solid #ccc;
         border-radius: 5px;
         margin-bottom: 20px;
-        font-size: 16px;
+        box-sizing: border-box;
+      }
+      input[type="email"]::placeholder,
+      input[type="password"]::placeholder {
+        color: #999;
       }
       button[type="submit"] {
         background-color: #4CAF50;
@@ -38,40 +43,71 @@
         padding: 10px 20px;
         border: none;
         border-radius: 5px;
-        font-size: 16px;
         cursor: pointer;
+        font-size: 1em;
+        margin-top: 20px;
       }
       button[type="submit"]:hover {
         background-color: #3e8e41;
       }
-      input:invalid {
-        border-color: red;
-      }
-      input:valid {
-        border-color: green;
-      }
-      input:invalid + span::before {
-        content: "✖ ";
+      .error-message {
         color: red;
-      }
-      input:valid + span::before {
-        content: "✓ ";
-        color: green;
+        margin-top: 5px;
       }
     </style>
   </head>
   <body>
     <h1>Login</h1>
-    <form action="/login" method="POST">
+    <form action="/login" method="POST" onsubmit="return validateForm()">
       <label for="email">Email:</label>
-      <input type="email" id="email" name="email" required>
-      <span></span>
+      <input type="email" id="email" name="email" placeholder="Enter your email" required>
+      <!-- <span class="input-hint">Please enter your email address</span> -->
+      <span id="email-error" class="error-message"></span>
       <label for="password">Password:</label>
-      <input type="password" id="password" name="password" required>
-      <span></span>
+      <input type="password" id="password" name="password" placeholder="Enter your password" required>
+      <!-- <span class="input-hint">Please enter your password</span> -->
+      <span id="password-error" class="error-message"></span>
       <button type="submit">Login</button>
     </form>
+    <p style="text-align: center;">Don't have an account? <a href="/register">Register here.</a></p>
     <script>
+      function validateForm() {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const emailError = document.getElementById('email-error');
+        const passwordError = document.getElementById('password-error');
+        let isValid = true;
+
+        // Check if email is valid
+        if (!/\S+@\S+\.\S+/.test(email)) {
+          emailError.textContent = 'Please enter a valid email address';
+          isValid = false;
+        } else {
+          emailError.textContent = '';
+        }
+
+        // Check if password is not empty
+        if (password === '') {
+          passwordError.textContent = 'Please enter your password';
+          isValid = false;
+        } else {
+          passwordError.textContent = '';
+        }
+
+        // Check for SQL injection and other attacks
+        const regex = /['";:]/;
+        if (regex.test(email) || regex.test(password)) {
+          emailError.textContent = 'Invalid input';
+          passwordError.textContent = 'Invalid input';
+          isValid = false;
+        }
+
+        return isValid;
+      }
+
+
+
+
       const form = document.querySelector('form');
       const emailInput = document.getElementById('email');
       const passwordInput = document.getElementById('password');
@@ -80,6 +116,11 @@
         // Prevent the form from submitting
         event.preventDefault();
 
+        if(!validateForm() ){
+          alert("Invalid input");
+          return;
+        }
+        
         // Validate the form inputs
         if (emailInput.validity.valid && passwordInput.validity.valid) {
           // Create a new user object with the form data

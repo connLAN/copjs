@@ -22,6 +22,7 @@
       label {
         display: block;
         margin-bottom: 10px;
+        font-weight: bold;
       }
       input[type="text"],
       input[type="email"],
@@ -31,7 +32,12 @@
         border: 1px solid #ccc;
         border-radius: 5px;
         margin-bottom: 20px;
-        font-size: 16px;
+        box-sizing: border-box;
+      }
+      input[type="text"]::placeholder,
+      input[type="email"]::placeholder,
+      input[type="password"]::placeholder {
+        color: #999;
       }
       button[type="submit"] {
         background-color: #4CAF50;
@@ -39,51 +45,100 @@
         padding: 10px 20px;
         border: none;
         border-radius: 5px;
-        font-size: 16px;
         cursor: pointer;
+        font-size: 1em;
+        margin-top: 20px;
       }
       button[type="submit"]:hover {
         background-color: #3e8e41;
       }
-      input:invalid {
-        border-color: red;
-      }
-      input:valid {
-        border-color: green;
-      }
-      input:invalid + span::before {
-        content: "✖ ";
+      .error-message {
         color: red;
-      }
-      input:valid + span::before {
-        content: "✓ ";
-        color: green;
+        margin-top: 5px;
       }
     </style>
   </head>
   <body>
     <h1>Register</h1>
-    <form action="/register" method="POST">
-      <label for="name">Name:</label>
-      <input type="text" id="name" name="name" required>
-      <span></span>
+    <form action="/register" method="POST" onsubmit="return validateForm()">
+      <label for="username">Username:</label>
+      <input type="text" id="username" name="username" placeholder="Enter your username" required>
+      <!-- <span class="input-hint">Please enter your username</span> -->
+      <span id="username-error" class="error-message"></span>
       <label for="email">Email:</label>
-      <input type="email" id="email" name="email" required>
-      <span></span>
+      <input type="email" id="email" name="email" placeholder="Enter your email" required>
+      <!-- <span class="input-hint">Please enter your email address</span> -->
+      <span id="email-error" class="error-message"></span>
       <label for="password">Password:</label>
-      <input type="password" id="password" name="password" pattern=".{8,}" title="Password must be at least 8 characters long" required>
-      <span></span>
+      <input type="password" id="password" name="password" placeholder="Enter your password" required>
+      <!-- <span class="input-hint">Please enter your password</span> -->
+      <span id="password-error" class="error-message"></span>
       <button type="submit">Register</button>
     </form>
+    <p style="text-align: center;">Already have an account? <a href="/login">Login here.</a></p>
+
     <script>
+      function validateForm() {
+        const username = document.getElementById('username').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const usernameError = document.getElementById('username-error');
+        const emailError = document.getElementById('email-error');
+        const passwordError = document.getElementById('password-error');
+        let isValid = true;
+
+        // Check if username is not empty
+        if (username === '') {
+          usernameError.textContent = 'Please enter your username';
+          isValid = false;
+        } else {
+          usernameError.textContent = '';
+        }
+
+        // Check if email is valid
+        if (!/\S+@\S+\.\S+/.test(email)) {
+          emailError.textContent = 'Please enter a valid email address';
+          isValid = false;
+        } else {
+          emailError.textContent = '';
+        }
+
+        // Check if password is at least 8 characters long
+        if (password.length < 8) {
+          passwordError.textContent = 'Password must be at least 8 characters long';
+          isValid = false;
+        } else {
+          passwordError.textContent = '';
+        }
+
+        // Check for SQL injection and other attacks
+        const regex = /['";:]/;
+        if (regex.test(username) || regex.test(email) || regex.test(password)) {
+          usernameError.textContent = 'Invalid input';
+          emailError.textContent = 'Invalid input';
+          passwordError.textContent = 'Invalid input';
+          isValid = false;
+        }
+
+        return isValid;
+      }
+
+
       const form = document.querySelector('form');
-      const nameInput = document.getElementById('name');
+      const nameInput = document.getElementById('username');
       const emailInput = document.getElementById('email');
       const passwordInput = document.getElementById('password');
 
       form.addEventListener('submit', (event) => {
         // Prevent the form from submitting
         event.preventDefault();
+
+        alert("hello-- " + nameInput.value + " " + emailInput.value + " " + passwordInput.value);
+
+        if(!validateForm()){
+          alert("Invalid input");
+          return; 
+        }
 
         // Validate the form inputs
         if (nameInput.validity.valid && emailInput.validity.valid && passwordInput.validity.valid) {
@@ -119,6 +174,8 @@
           });
         }
       });
+
+
     </script>
   </body>
 </html>
