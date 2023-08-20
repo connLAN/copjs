@@ -64,6 +64,25 @@ registerRouter.post('/', async (req, res) => {
     return;
   }
   try {
+    console.log('name = ' + name +' email = ' + email +" password = "+ password);
+    // avoid duplicate email
+    const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+    if (rows.length > 0) {
+      console.log('This email is already registered');
+      res.status(400).send('This email is already registered');
+      return;
+    }
+
+    // avoid duplicate name
+    const [rows2] = await pool.query('SELECT * FROM users WHERE name = ?', [name]);
+    if (rows2.length > 0) {
+      console.log('This name is already registered');
+      res.status(400).send('This name is already registered');
+      return;
+    }
+
+
+
     // Hash the password using bcrypt
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
@@ -81,7 +100,6 @@ registerRouter.post('/', async (req, res) => {
     const token = crypto.randomBytes(16).toString('hex');
     await pool.query('INSERT INTO email_verification (email, token) VALUES (?, ?)', [email, token]);
     console.log(token);
-   
    
     // Send the verification token to the user's email address
 
@@ -222,6 +240,20 @@ app.use((req, res) => {
   res.status(404).sendFile(path.join(__dirname, '/', '404.html'));
 });
 
+
+const cron = require('node-cron');
+const moment = require('moment');
+
+// Schedule a cron job to delete unverified users and email verification records every 24 hours
+cron.schedule('0 0 * * *', async () => {
+  const threshold = moment().subtract(72, 'hours').format('YYYY-MM-DD HH:mm:ss');
+
+  // Delete unverified users
+  await pool.query('DELETE FROM users WHERE email_verified = false AND created_at < ?', [threshold]);
+
+  // Delete email verification records
+  await pool.query('DELETE FROM email_verification WHERE created_at < ?', [threshold]);
+});
 
 
 // Start the server

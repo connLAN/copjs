@@ -73,6 +73,7 @@
       <input type="password" id="password" name="password" placeholder="Enter your password" required>
       <!-- <span class="input-hint">Please enter your password</span> -->
       <span id="password-error" class="error-message"></span>
+      <span class="error-message"></span>
       <button type="submit">Register</button>
     </form>
     <p style="text-align: center;">Already have an account? <a href="/login">Login here.</a></p>
@@ -133,7 +134,7 @@
         // Prevent the form from submitting
         event.preventDefault();
 
-        alert("hello-- " + nameInput.value + " " + emailInput.value + " " + passwordInput.value);
+        // alert("hello-- " + nameInput.value + " " + emailInput.value + " " + passwordInput.value);
 
         if(!validateForm()){
           alert("Invalid input");
@@ -157,22 +158,39 @@
             },
             body: JSON.stringify(user)
           })
-          .then(response => response.text())
-          .then(data => {
-            // Display a success message
-            alert(data);
+          .then(response => {
 
-            // Set a cookie to remember the user's name
-            document.cookie = `name=${user.name}; max-age=3600; path=/`;
+            if (response.ok) {
+              // Redirect to the login page
+              window.location.href = '/login';
+            } else {
+              // Reset the form and display the error message
+              alert('000000000000000000000');
+ 
 
-            // Redirect to the home page
-            window.location.href = '/';
+              alert('11111111111111111111');
+
+              response.json().then(data => {
+                alert(data.message);
+                console.log("Register result: " + data.message);
+                const errorMessage = form.querySelector('error-message');
+                errorMessage.textContent = data.message;
+
+                // form.reset();
+                // nameInput.focus();
+              });
+
+              alert('2222222222222222222');
+
+
+            }
+
           })
           .catch(error => {
             console.error(error);
-            alert('An error occurred while registering the user');
+            alert('An error occurred while registering  ${user}');
           });
-        }
+      }
       });
 
 
