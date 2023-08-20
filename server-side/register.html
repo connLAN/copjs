@@ -134,7 +134,7 @@
         // Prevent the form from submitting
         event.preventDefault();
 
-        // alert("hello-- " + nameInput.value + " " + emailInput.value + " " + passwordInput.value);
+        alert("hello-- " + nameInput.value + " " + emailInput.value + " " + passwordInput.value);
 
         if(!validateForm()){
           alert("Invalid input");
@@ -160,35 +160,28 @@
           })
           .then(response => {
 
+            alert("HELLO ++++ "  + response.status + " " + response.statusText);
+
             if (response.ok) {
               // Redirect to the login page
               window.location.href = '/login';
             } else {
-              // Reset the form and display the error message
-              alert('000000000000000000000');
  
 
-              alert('11111111111111111111');
+              response.text().then(text => {
+                 alert("WARNING: "+ text); // Print the response text to the console
 
-              response.json().then(data => {
-                alert(data.message);
-                console.log("Register result: " + data.message);
-                const errorMessage = form.querySelector('error-message');
-                errorMessage.textContent = data.message;
+                const errorMessage = form.querySelector('.error-message');
+                errorMessage.textContent = text;
 
-                // form.reset();
-                // nameInput.focus();
-              });
-
-              alert('2222222222222222222');
-
-
+            });
+ 
             }
 
           })
           .catch(error => {
             console.error(error);
-            alert('An error occurred while registering  ${user}');
+            alert('An error occurred while registering ' + error);
           });
       }
       });

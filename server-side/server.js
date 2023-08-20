@@ -60,7 +60,7 @@ const registerRouter = express.Router();
 registerRouter.post('/', async (req, res) => {
   const { name, email, password } = req.body;
   if (!name || !email || !password) {
-    res.status(400).send('Name = ' + name +' email = ' + email +" password = "+ password);
+    res.status(400).send('Namename = ' + name +' email = ' + email +" password = "+ password);
     return;
   }
   try {
@@ -68,7 +68,7 @@ registerRouter.post('/', async (req, res) => {
     // avoid duplicate email
     const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
     if (rows.length > 0) {
-      console.log('This email is already registered');
+      // console.log('This email is already registered');
       res.status(400).send('This email is already registered');
       return;
     }
@@ -76,7 +76,7 @@ registerRouter.post('/', async (req, res) => {
     // avoid duplicate name
     const [rows2] = await pool.query('SELECT * FROM users WHERE name = ?', [name]);
     if (rows2.length > 0) {
-      console.log('This name is already registered');
+      // console.log('This name is already registered');
       res.status(400).send('This name is already registered');
       return;
     }
