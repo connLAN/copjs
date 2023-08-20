@@ -6,6 +6,7 @@ const app = express();
 
 // Serve static files from the "public" directory
 app.use(express.static('public'));
+app.use(express.static('public/img'));
 app.use(express.static('/'));
 
 // Parse JSON and URL-encoded query parameters
@@ -147,10 +148,12 @@ loginRouter.post('/', async (req, res) => {
 
   // Validate input
   if (!email || !password) {
+    console.log('Email and password are required');
     res.status(400).send('Email and password are required');
     return;
   }
   if (!validator.isEmail(email)) {
+    console.log('Invalid email address');
     res.status(400).send('Invalid email address');
     return;
   }
@@ -162,8 +165,14 @@ loginRouter.post('/', async (req, res) => {
     // Get the user with the specified email from the "users" table
     const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [sanitizedEmail]);
     if (rows.length === 0) {
-      res.status(401).send('Invalid email or password');
+      console.log('This email is not registered');
+      res.status(401).send('This email is not registered');
       return;
+    }
+
+    if (!rows[0].email_verified) {
+      console.log('Email not verified');
+      return res.status(401).send('Email not verified');
     }
 
     // Compare the hashed password with the password provided by the user
@@ -199,6 +208,13 @@ htmlRouter.get('/register', (req, res) => {
 htmlRouter.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, '/', 'login.html'));
 });
+htmlRouter.get('/fail', (req, res) => {
+  res.sendFile(path.join(__dirname, '/', 'fail.html'));
+});
+htmlRouter.get('/welcome', (req, res) => {
+  res.sendFile(path.join(__dirname, '/', 'welcome.html'));
+});
+
 app.use('/', htmlRouter);
 
 // Define a 404 page for non-existent pages
