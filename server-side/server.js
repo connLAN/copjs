@@ -4,14 +4,6 @@ const mysql = require('mysql2/promise');
 const cookieParser = require('cookie-parser');
 const app = express();
 
-const session = require('express-session');
-app.use(session({
-  secret: 'my-secret-key',
-  resave: false,
-  saveUninitialized: true
-}));
-
-
 // Serve static files from the "public" directory
 app.use(express.static('public'));
 app.use(express.static('public/img'));
@@ -29,19 +21,34 @@ const validator = require('validator');
 const saltRounds = 10;
 
 
+const fs = require('fs');
+
+const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+
+console.log(`Server running on port ${config.port}`);
+console.log(`Database connection: ${config.database.host}:${config.database.port}`);
+
+
+const session = require('express-session');
+app.use(session({
+  secret: config.session.secret,  
+  resave: false,
+  saveUninitialized: true
+}));
+
 // Connect to the MySQL database
 const pool = mysql.createPool({
-  host: 'localhost',
-  user: 'tiny',
-  password: 'password',
-  database: 'mydb'
+  host: config.database.host,
+  user: config.database.user,
+  password: config.database.password,
+  database: config.database.database
 });
 
 // Create a connection to the MySQL server
 const connection = mysql.createConnection({
-  host: 'localhost',
-  user: 'tiny',
-  password: 'password'
+  host: config.database.host,
+  user: config.database.user,
+  password: config.database.password
 });
 
 // Connect to the MySQL server and create the "mydb" database and users table
@@ -52,12 +59,12 @@ require('./database');
 const nodemailer = require('nodemailer');
 // Create a transporter object using SMTP transport
 const transporter = nodemailer.createTransport({
-  host: 'smtp.qq.com',
-  port: 587,
+  host: config.email.host,
+  port: config.email.port,
   secure: false,
   auth: {
-    user: '44514285@qq.com',
-    pass: 'msthnqahawcqbjed'
+    user: config.email.auth.user,
+    pass: config.email.auth.pass
   }
 });
 
@@ -68,7 +75,7 @@ const registerRouter = express.Router();
 registerRouter.post('/', async (req, res) => {
   const { name, email, password } = req.body;
   if (!name || !email || !password) {
-    res.status(400).send('Namename = ' + name +' email = ' + email +" password = "+ password);
+    res.status(400).send('WRONG: Nameee = ' + name +' email = ' + email +" password = "+ password);
     return;
   }
   try {
@@ -88,7 +95,6 @@ registerRouter.post('/', async (req, res) => {
       res.status(400).send('This name is already registered');
       return;
     }
-
 
 
     // Hash the password using bcrypt
@@ -114,11 +120,14 @@ registerRouter.post('/', async (req, res) => {
 
     // Define the email message
     const mailOptions = {
-      from: '44514285@qq.com',
+      from: config.email.auth.user,
       to: email,
       subject: 'Verification Token',
       text: `Your verification token is ${token}` + '\n'
-       + 'Please click the link below to verify your email address:' + 'http://192.168.2.180:3000/verify?email=' + email + '&token=' + token
+       + 'Please click the link below to verify your email address:'
+       + 'http://'
+       + config.web.domain +':' + config.port
+       + '/verify?email=' + email + '&token=' + token
     };
 
     // todo: add global config of web domain in the future instead of hard coding
@@ -285,5 +294,16 @@ cron.schedule('0 0 * * *', async () => {
 app.listen(3000, () => {
   console.log('Server started on port 3000');
 });
+
+
+/* 
+export config for other modules to use such as in database.js
+const serverConfig = require('./server.js');
+console.log(serverConfig.config.port);
+*/
+
+module.exports = {
+  config: config
+};
 
 exports.pool = pool;

@@ -1,16 +1,30 @@
 const nodemailer = require('nodemailer');
+const fs = require('fs');
 
-// Create a transporter object using SMTP transport
+const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+
+// // Create a transporter object using SMTP transport
+// const transporter = nodemailer.createTransport({
+//   host: 'smtp.qq.com',
+//   port: 587,
+//   secure: false,
+//   auth: {
+//     user: '44514285@qq.com',
+//     pass: 'msthnqahawcqbjed'
+//   }
+// });
+
+
+
 const transporter = nodemailer.createTransport({
-  host: 'smtp.qq.com',
-  port: 587,
+  host: config.email.host,
+  port: config.email.port,
   secure: false,
   auth: {
-    user: '44514285@qq.com',
-    pass: 'msthnqahawcqbjed'
+    user: config.email.auth.user,
+    pass: config.email.auth.pass
   }
 });
-
 // Define the email message
 const mailOptions = {
   from: '44514285@qq.com',

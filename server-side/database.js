@@ -1,10 +1,24 @@
 const mysql = require('mysql');
 
+
+const fs = require('fs');
+
+const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+
+console.log("user:" + config.database.user + "password:" + config.database.password + "host:" + config.database.host + "port:" + config.database.port + "database:" + config.database.database + "");
+
+// // Create a connection to the MySQL server
+// const connection = mysql.createConnection({
+//   host: 'localhost',
+//   user: 'tiny',
+//   password: 'password'
+// });
+
 // Create a connection to the MySQL server
 const connection = mysql.createConnection({
-  host: 'localhost',
-  user: 'tiny',
-  password: 'password'
+  host: config.database.host,
+  user: config.database.user,
+  password: config.database.password
 });
 
 // Connect to the MySQL server
