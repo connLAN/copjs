@@ -4,6 +4,14 @@ const mysql = require('mysql2/promise');
 const cookieParser = require('cookie-parser');
 const app = express();
 
+const session = require('express-session');
+app.use(session({
+  secret: 'my-secret-key',
+  resave: false,
+  saveUninitialized: true
+}));
+
+
 // Serve static files from the "public" directory
 app.use(express.static('public'));
 app.use(express.static('public/img'));
@@ -166,12 +174,12 @@ loginRouter.post('/', async (req, res) => {
 
   // Validate input
   if (!email || !password) {
-    console.log('Email and password are required');
+    // console.log('Email and password are required');
     res.status(400).send('Email and password are required');
     return;
   }
   if (!validator.isEmail(email)) {
-    console.log('Invalid email address');
+    // console.log('Invalid email address');
     res.status(400).send('Invalid email address');
     return;
   }
@@ -183,14 +191,14 @@ loginRouter.post('/', async (req, res) => {
     // Get the user with the specified email from the "users" table
     const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [sanitizedEmail]);
     if (rows.length === 0) {
-      console.log('This email is not registered');
+      // console.log('This email is not registered');
       res.status(401).send('This email is not registered');
       return;
     }
 
     if (!rows[0].email_verified) {
-      console.log('Email not verified');
-      return res.status(401).send('Email not verified');
+      // console.log('Email not verified');
+      return res.status(401).send('Email not verified, \nplease open your email and click the verification link');
     }
 
     // Compare the hashed password with the password provided by the user
@@ -202,6 +210,7 @@ loginRouter.post('/', async (req, res) => {
     }
 
     // Set a cookie to remember the user's email
+    req.session.user = { email: email };
     res.cookie('email', email, { maxAge: 3600000, httpOnly: true });
     res.send('Login successful!');
   } catch (error) {
@@ -229,9 +238,25 @@ htmlRouter.get('/login', (req, res) => {
 htmlRouter.get('/fail', (req, res) => {
   res.sendFile(path.join(__dirname, '/', 'fail.html'));
 });
-htmlRouter.get('/welcome', (req, res) => {
-  res.sendFile(path.join(__dirname, '/', 'welcome.html'));
+
+
+////////////////////////////////////////////////////////////
+
+// 授权中间件
+app.get('/welcome', (req, res) => {
+  // Check if user is logged in
+  if (!req.session.user) {
+    // If user is not logged in, redirect to login page
+    console.log('Please login first');
+    res.redirect('/login');
+  } else {
+    console.log('You have logged in');
+    res.sendFile(path.join(__dirname, '/', 'welcome.html'));
+  }
 });
+
+
+////////////////////////////////////////////////////////////
 
 app.use('/', htmlRouter);
 

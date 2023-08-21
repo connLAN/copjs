@@ -67,6 +67,7 @@
       <input type="password" id="password" name="password" placeholder="Enter your password" required>
       <!-- <span class="input-hint">Please enter your password</span> -->
       <span id="password-error" class="error-message"></span>
+      <span class="error-message"></span>
       <button type="submit">Login</button>
     </form>
     <p style="text-align: center;">Don't have an account? <a href="/register">Register here.</a></p>
@@ -105,9 +106,6 @@
         return isValid;
       }
 
-
-
-
       const form = document.querySelector('form');
       const emailInput = document.getElementById('email');
       const passwordInput = document.getElementById('password');
@@ -139,13 +137,9 @@
           })
           .then(response => {
             
+            alert("HELLO ++++ "  + response.status + " " + response.statusText);
 
             if (response.ok) {
-
-              // response.json().then(data => {
-              //   alert(`Login successful! Welcome, ${data}`);
-              //   console.log(data);
-              // });
 
               // Set a cookie to remember the user's email
               document.cookie = `email=${user.email}; max-age=3600; path=/`;
@@ -153,13 +147,14 @@
               // Redirect to the welcome page
               window.location.href = '/welcome';
             } else {
-              // response.json().then(data => {
-              //   alert(`Login failed, ${data}`);
-              //   console.log(data); )
-              // });
-              // Redirect to the fail page
-              window.location.href = '/fail';
-            }
+
+              response.text().then(text => {
+                 alert("WARNING: "+ text); // Print the response text to the console
+
+                const errorMessage = form.querySelector('.error-message');
+                errorMessage.textContent = text;
+              });
+          }
         })
         .catch(error => {
           console.error(error);

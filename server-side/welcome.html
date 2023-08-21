@@ -2,9 +2,22 @@
 <html>
   <head>
     <title>My Web System</title>
+    <style>
+      body {
+        background-image: url('snow.jpg');
+        background-repeat: no-repeat;
+        background-position: center center;
+        background-size: cover;
+      }
+
+      @media (max-width: 768px) {
+        body {
+          background-size: contain;
+        }
+      }
+    </style>
   </head>
   <body>
     <h1>You have logined successfully</h1>
-    <img src="snow.jpg" alt="snow mountain">
   </body>
 </html>
