@@ -2,6 +2,8 @@ const path = require('path');
 const express = require('express');
 const mysql = require('mysql2/promise');
 const cookieParser = require('cookie-parser');
+const crypto = require('crypto');
+
 const app = express();
 
 // Serve static files from the "public" directory
@@ -36,6 +38,37 @@ app.use(session({
   saveUninitialized: true
 }));
 
+// /* 
+///////////////////////////////////////////////////////////
+app.use((req, res, next) => {
+  const excludedPaths = ['/login',
+                          '/welcome',
+                          '/register',
+                          '/index',
+                          '/index.html',
+                          '/fail'];
+
+  if (excludedPaths.includes(req.path)) {
+    // Skip middleware for excluded paths
+    next();
+    return;
+  }
+
+  if (req.cookies.remember_me) {
+    const token = req.cookies.remember_me;
+    const user = db.getUserByToken(token);
+    if (user && user.expires > new Date()) {
+      req.session.user = user;
+    } else {
+      res.redirect('/welcome');
+      return;
+    }
+  }
+  next();
+});
+/////////////////////////////////////////////////////////////////
+// */
+
 // Connect to the MySQL database
 const pool = mysql.createPool({
   host: config.database.host,
@@ -53,8 +86,10 @@ const connection = mysql.createConnection({
 
 // Connect to the MySQL server and create the "mydb" database and users table
 // call database.js
-require('./database');
+const db = require('./database');
 
+// Initialize the database
+db.initializeDatabase();
 
 const nodemailer = require('nodemailer');
 // Create a transporter object using SMTP transport
@@ -109,7 +144,7 @@ registerRouter.post('/', async (req, res) => {
 
 
     // Generate a verification token for the user, write into the database , and sent it to the user's email address
-    const crypto = require('crypto');
+   
 
     const token = crypto.randomBytes(16).toString('hex');
     await pool.query('INSERT INTO email_verification (email, token) VALUES (?, ?)', [email, token]);
@@ -123,7 +158,8 @@ registerRouter.post('/', async (req, res) => {
       from: config.email.auth.user,
       to: email,
       subject: 'Verification Token',
-      text: `Your verification token is ${token}` + '\n'
+      text: 'Your have just registered ' + config.web.domain +'\n'
+       +'\n'
        + 'Please click the link below to verify your email address:'
        + 'http://'
        + config.web.domain +':' + config.port
@@ -195,38 +231,70 @@ loginRouter.post('/', async (req, res) => {
 
   // Sanitize input
   const sanitizedEmail = validator.escape(email);
+  
+  // Check if the user exists
+  db.getUserByEmail(sanitizedEmail)
+    .then(user => {
+      if (user) {
+        console.log('This email is registered');
+        // check if the user's email address is verified
+        if (!user.email_verified) {
+          console.log('Email not verified');
+          res.status(401).send('Email not verified, \nplease open your email and click the verification link');
+          return;
+        }else{
+          console.log('Email verified');
+          // compare the hashed password with the password provided by the user
+          const hashedPassword = user.password;
+          bcrypt.compare(password, hashedPassword)
+            .then(isMatch => {
+              if (!isMatch) {
+                res.status(401).send('Invalid email or password');
+                return;
+              }else{
+                // Set a cookie to remember the user's email
+                const rememberMe = req.body.rememberMe;
+                const token = crypto.randomBytes(64).toString('hex');
+                const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
 
-  try {
-    // Get the user with the specified email from the "users" table
-    const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [sanitizedEmail]);
-    if (rows.length === 0) {
-      // console.log('This email is not registered');
-      res.status(401).send('This email is not registered');
-      return;
-    }
+                if (rememberMe) {
+                  // Store token in remember_me table
+                  db.storeToken(email, token, expires)
+                    .then(() => {
+                      // Set remember_me cookie with token
+                      res.cookie('remember_me', token, {
+                        expires: expires,
+                        httpOnly: true,
+                        secure: true
+                      });
 
-    if (!rows[0].email_verified) {
-      // console.log('Email not verified');
-      return res.status(401).send('Email not verified, \nplease open your email and click the verification link');
-    }
-
-    // Compare the hashed password with the password provided by the user
-    const hashedPassword = rows[0].password;
-    const isMatch = await bcrypt.compare(password, hashedPassword);
-    if (!isMatch) {
-      res.status(401).send('Invalid email or password');
-      return;
-    }
-
-    // Set a cookie to remember the user's email
-    req.session.user = { email: email };
-    res.cookie('email', email, { maxAge: 3600000, httpOnly: true });
-    res.send('Login successful!');
-  } catch (error) {
-    console.error(error);
-    res.status(500).send('An error occurred while logging in the user');
-  }
-});
+                      // Set session user with email and expires
+                      req.session.user = { email: email, expires: expires };
+                      res.redirect('/dashboard');
+                    })
+                    .catch(error => {
+                      console.error(error);
+                      res.status(500).send('Internal server error');
+                    });
+                } else {
+                  // Set session user with email only
+                  req.session.user = { email: email };
+                  res.redirect('/dashboard');
+                }
+              }
+            })
+            .catch(error => {
+              console.error(error);
+              res.status(500).send('Internal server error');
+            });
+        }
+      } else {
+        console.log('This email is not registered');
+        res.status(401).send('Invalid email or password');
+        return;
+      }
+    })
+  });
 
 // Mount the router on the app
 app.use('/login', loginRouter);
@@ -238,6 +306,12 @@ const htmlRouter = express.Router();
 htmlRouter.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '/', 'index.html'));
 });
+htmlRouter.get('/index', (req, res) => {
+  res.sendFile(path.join(__dirname, '/', 'index.html'));
+});
+htmlRouter.get('/index.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '/', 'index.html'));
+});
 htmlRouter.get('/register', (req, res) => {
   res.sendFile(path.join(__dirname, '/', 'register.html'));
 });
@@ -247,21 +321,54 @@ htmlRouter.get('/login', (req, res) => {
 htmlRouter.get('/fail', (req, res) => {
   res.sendFile(path.join(__dirname, '/', 'fail.html'));
 });
-
+htmlRouter.get('/dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, '/', 'dashboard.html'));
+});
 
 ////////////////////////////////////////////////////////////
 
 // 授权中间件
 app.get('/welcome', (req, res) => {
-  // Check if user is logged in
-  if (!req.session.user) {
-    // If user is not logged in, redirect to login page
-    console.log('Please login first');
-    res.redirect('/login');
+
+  // Check cookies for remember me
+  if (req.cookies.remember_me) {
+    const token = req.cookies.remember_me;
+    
+    db.getUserByToken(token)
+      .then(user => {
+        console.log('Please login first A');
+        if (user){
+          console.log('Please login first B');
+          console.log("expires:"+ user.expires + ' new data(): ' + new Date());
+          
+
+          if(user.expires > new Date()) {
+            console.log('Please login first C');
+            req.session.user = user;
+            res.sendFile(path.join(__dirname, '/', 'welcome.html'));
+            return;
+          }else{
+            console.log('Please login first D');
+            res.redirect('/login');
+            return;
+          }
+        } else {
+          console.log('Please login first E');
+          res.redirect('/login');
+          return;
+        }
+      })
+      .catch(error => {
+        console.log('Please login first F');
+        console.error(error);
+        res.status(500).send('Internal server error');
+      });
   } else {
-    console.log('You have logged in');
-    res.sendFile(path.join(__dirname, '/', 'welcome.html'));
+    console.log('Please login first B');
+    res.redirect('/login');
+    return;
   }
+  
 });
 
 
@@ -278,7 +385,7 @@ app.use((req, res) => {
 const cron = require('node-cron');
 const moment = require('moment');
 
-// Schedule a cron job to delete unverified users and email verification records every 24 hours
+// Schedule a cron job to delete unverified users and email verification records every 72 hours
 cron.schedule('0 0 * * *', async () => {
   const threshold = moment().subtract(72, 'hours').format('YYYY-MM-DD HH:mm:ss');
 
@@ -306,4 +413,4 @@ module.exports = {
   config: config
 };
 
-exports.pool = pool;
+// exports.pool = pool;
