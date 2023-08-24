@@ -1,15 +1,23 @@
 const path = require('path');
 const express = require('express');
+const morgan = require('morgan');
 const mysql = require('mysql2/promise');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
-
+const fs = require('fs');
+const cron = require('node-cron');
 const app = express();
 
 // Serve static files from the "public" directory
 app.use(express.static('public'));
 app.use(express.static('public/img'));
 app.use(express.static('/'));
+
+// create a write stream (in append mode)
+const accessLogStream = fs.createWriteStream(path.join(__dirname, 'access.log'), { flags: 'a' });
+
+// setup the logger
+app.use(morgan('combined', { stream: accessLogStream }));
 
 // Parse JSON and URL-encoded query parameters
 app.use(express.json());
@@ -22,14 +30,9 @@ const bcrypt = require('bcrypt');
 const validator = require('validator');
 const saltRounds = 10;
 
-
-const fs = require('fs');
-
 const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
-
 console.log(`Server running on port ${config.port}`);
 console.log(`Database connection: ${config.database.host}:${config.database.port}`);
-
 
 const session = require('express-session');
 app.use(session({
@@ -37,52 +40,6 @@ app.use(session({
   resave: false,
   saveUninitialized: true
 }));
-
-// /* 
-///////////////////////////////////////////////////////////
-app.use((req, res, next) => {
-  const excludedPaths = ['/login',
-                          '/welcome',
-                          '/register',
-                          '/index',
-                          '/index.html',
-                          '/fail'];
-
-  if (excludedPaths.includes(req.path)) {
-    // Skip middleware for excluded paths
-    next();
-    return;
-  }
-
-  if (req.cookies.remember_me) {
-    const token = req.cookies.remember_me;
-    const user = db.getUserByToken(token);
-    if (user && user.expires > new Date()) {
-      req.session.user = user;
-    } else {
-      res.redirect('/welcome');
-      return;
-    }
-  }
-  next();
-});
-/////////////////////////////////////////////////////////////////
-// */
-
-// Connect to the MySQL database
-const pool = mysql.createPool({
-  host: config.database.host,
-  user: config.database.user,
-  password: config.database.password,
-  database: config.database.database
-});
-
-// Create a connection to the MySQL server
-const connection = mysql.createConnection({
-  host: config.database.host,
-  user: config.database.user,
-  password: config.database.password
-});
 
 // Connect to the MySQL server and create the "mydb" database and users table
 // call database.js
@@ -103,11 +60,76 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+// Define a middleware function to be used for every secured routes
+app.use((req, res, next) => {
+  const excludedPaths = ['/register','/fail', '/verify'];
+  if (excludedPaths.includes(req.path)) {
+    // Skip middleware for excluded paths
+    console.log('Skip middleware for excluded paths');
+    next();
+    return;
+  }
 
+  // 检查是否已通过身份验证
+  const isAuthenticated = req.cookies.auth === 'true' || req.query.auth === 'true';
+  if (isAuthenticated) {
+    console.log('isAuthenticated, direct to dashboard AAA');
+    // res.redirect('/dashboard');
+    next();
+    return;
+  }
+
+  if (req.cookies.remember_me) {
+    const token = req.cookies.remember_me;
+    const user = db.getUserByToken(token);
+
+    db.getUserByToken(token)
+      .then(user => {
+        if (user) {
+          if(user.expires > new Date()) {
+            req.session.user = user;
+            res.cookie('auth', 'true', { maxAge: 3600000 }); // 设置 cookie 有效期为 1 小时
+
+            db.updateTokenexpires(token)
+              .then(() => {
+                console.log('Token expires updated');
+              })
+              .catch(error => {
+                console.error(error);
+                res.status(500).send('Internal server error');
+              });
+
+              console.log('remembe me ok, direct to dashboard');
+              // res.redirect('/dashboard');
+              next();
+                      
+          }else{
+            console.log('remembe me ok, but token expires, direct to login');
+            res.redirect('/login');
+            return;
+          }
+        } else {
+          console.log('remembe me ok, but user not found, direct to login');
+          res.redirect('/login');
+          return;
+        }
+      })
+      .catch(error => {
+        console.error(error);
+        res.status(500).send('Internal server error');
+      });
+  } else {
+    console.log('remembe me not ok, direct to login');
+    res.redirect('/login');
+    return;
+  }
+});
 
 // Define a router for the registration form submissions
 const registerRouter = express.Router();
 registerRouter.post('/', async (req, res) => {
+
+
   const { name, email, password } = req.body;
   if (!name || !email || !password) {
     res.status(400).send('WRONG: Nameee = ' + name +' email = ' + email +" password = "+ password);
@@ -115,44 +137,91 @@ registerRouter.post('/', async (req, res) => {
   }
   try {
     console.log('name = ' + name +' email = ' + email +" password = "+ password);
+
+    // Sanitize input
+    const sanitizedEmail = validator.escape(email);
+    const sanitizedName = validator.escape(name);
+    const sanitizedPassword = validator.escape(password);
+
+    if(sanitizedEmail !== email
+      || !validator.isEmail(sanitizedEmail)){
+      res.status(400).send('Invalid email input');
+      return;
+    }
+ 
+    if(sanitizedName !== name 
+      || !validator.isLength(sanitizedName, {min: 3, max: 20})
+      || !validator.isAlphanumeric(sanitizedName)){
+      res.status(400).send('Invalid name input');
+      return;
+    }
+
+    if(sanitizedPassword !== password  
+      || !validator.isLength(sanitizedPassword, {min: 8, max: 20})
+      || !validator.isAlphanumeric(sanitizedPassword)){
+      res.status(400).send('Invalid password input');
+      return;
+    }
+
+    // Validate input
     // avoid duplicate email
-    const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
-    if (rows.length > 0) {
-      // console.log('This email is already registered');
-      res.status(400).send('This email is already registered');
-      return;
-    }
+    db.getUserByEmail(email)
+      .then(user => {
+        if (user) {
+          console.log('This email is registered');
+          res.status(400).send('This email is already registered');
+          return;
+        } else {
+          console.log('This email is not registered');
+        }
+      })
+      .catch(error => {
+        console.error(error);
+        res.status(500).send('Internal server error: when checking if the email is already registered');
+      });
 
-    // avoid duplicate name
-    const [rows2] = await pool.query('SELECT * FROM users WHERE name = ?', [name]);
-    if (rows2.length > 0) {
-      // console.log('This name is already registered');
-      res.status(400).send('This name is already registered');
-      return;
-    }
-
+    db.getUserByName(name)
+      .then(user => {
+        if (user) {
+          console.log('This name is registered');
+          res.status(400).send('This name is already registered');
+          return;
+        } else {
+          console.log('This name is not registered');
+        }
+      })
+      .catch(error => {
+        console.error(error);
+        res.status(500).send('Internal server error: when checking if the name is already registered');
+      });
 
     // Hash the password using bcrypt
     const hashedPassword = await bcrypt.hash(password, saltRounds);
+    
+    db.storeUser(name, email, hashedPassword)
+      .then(() => {
+        console.log('User information stored');
+      })
+      .catch(error => {
+        console.error(error);
+        res.status(500).send('Internal server error: when storing user information');
+      });
 
-    // Insert user information into the "users" table
-    const [result] = await pool.query('INSERT INTO users (name, email, password) VALUES (?, ?, ?)', [name, email, hashedPassword]);
-    console.log(result);
-   
     // Set a cookie to remember the user's email
-    res.cookie('email', email, { maxAge: 3600000, httpOnly: true });
-
+    res.cookie('email', email, { maxAge: 3600000, httpOnly: true, secure: true, sameSite: 'strict' });
 
     // Generate a verification token for the user, write into the database , and sent it to the user's email address
-   
-
     const token = crypto.randomBytes(16).toString('hex');
-    await pool.query('INSERT INTO email_verification (email, token) VALUES (?, ?)', [email, token]);
-    console.log(token);
-   
+    db.storeVerificationToken(email, token)
+      .then(() => {
+        console.log('Verification token stored');
+      })
+      .catch(error => {
+        console.error(error);
+        res.status(500).send('Internal server error: when storing verification token');
+      });
+
     // Send the verification token to the user's email address
-
-
     // Define the email message
     const mailOptions = {
       from: config.email.auth.user,
@@ -166,8 +235,6 @@ registerRouter.post('/', async (req, res) => {
        + '/verify?email=' + email + '&token=' + token
     };
 
-    // todo: add global config of web domain in the future instead of hard coding
-
     // Send the email
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
@@ -177,37 +244,75 @@ registerRouter.post('/', async (req, res) => {
       }
     });
    
-   
-   
     res.send('Registration successful!');
   } catch (error) {
     console.error(error);
     res.status(500).send('Internal server error');
   }
 });
-
 // Mount the router on the app
 app.use('/register', registerRouter);
 
-
+// Define a router for the verification link
 app.get('/verify', async (req, res) => {
   const { email, token } = req.query;
 
   // Check if the verification token is valid
-  const result = await pool.query('SELECT * FROM email_verification WHERE email = ? AND token = ?', [email, token]);
-  if (result.length === 0) {
-    // Invalid token
-    return res.status(400).send('Invalid verification token');
-  }
+  db.getVerificationToken(email)
+    .then(token => {
+      if (token) {
+        console.log('email = ' + email + ' token = ' + token);
 
-  // Update the user's email address as verified
-  await pool.query('UPDATE users SET email_verified = true WHERE email = ?', [email]);
+        // Check if the verification token has expired
+        const expires = new Date(token.created_at).getTime() + config.session.verify_token_timeout_in_seconds; 
+        if (expires < Date.now()) {
+          // Verification token has expired
+          db.deleteVerificationToken(email)
+            .then(() => {
+              console.log('Verification token has expired');
+            })
+            .catch(error => {
+              console.error(error);
+              res.status(500).send('Internal server error');
+            });
 
-  // Delete the verification token from the database
-  await pool.query('DELETE FROM email_verification WHERE email = ?', [email]);
+          return res.status(400).send('Verification token has expired');
+        }else{
+          console.log('Verification token has not expired');
+          db.deleteVerificationToken(email)
+            .then(() => {
+              console.log('Verification token deleted');
+            }
+            )
+            .catch(error => {
+              console.error(error);
+              res.status(500).send('Internal server error');
+            }
+            );
 
-  // Redirect the user to the login page
-  res.redirect('/login');
+          // Update the user's email address as verified
+          db.updateUserEmailVerified(email)
+            .then(() => {
+              console.log('User email verified');
+            })
+            .catch(error => {
+              console.error(error);
+              res.status(500).send('Internal server error');
+            });
+
+          // Redirect the user to the login page
+          res.redirect('/login');
+        }
+
+      } else {  
+        console.log('Verification token not found');
+        return res.status(400).send('Verification token not found');  
+      }
+    })
+    .catch(error => {
+      console.error(error);
+      res.status(500).send('Internal server error');
+    });
 });
 
 
@@ -223,15 +328,23 @@ loginRouter.post('/', async (req, res) => {
     res.status(400).send('Email and password are required');
     return;
   }
-  if (!validator.isEmail(email)) {
-    // console.log('Invalid email address');
-    res.status(400).send('Invalid email address');
+
+  const sanitizedEmail = validator.escape(email);
+  const sanitizedPassword = validator.escape(password);
+
+  if(sanitizedEmail !== email
+    || !validator.isEmail(sanitizedEmail)){
+    res.status(400).send('Invalid email input');
     return;
   }
 
-  // Sanitize input
-  const sanitizedEmail = validator.escape(email);
-  
+  if(sanitizedPassword !== password  
+    || !validator.isLength(sanitizedPassword, {min: 8, max: 20})
+    || !validator.isAlphanumeric(sanitizedPassword)){
+    res.status(400).send('Invalid password input');
+    return;
+  }
+
   // Check if the user exists
   db.getUserByEmail(sanitizedEmail)
     .then(user => {
@@ -270,7 +383,7 @@ loginRouter.post('/', async (req, res) => {
 
                       // Set session user with email and expires
                       req.session.user = { email: email, expires: expires };
-                      res.redirect('/dashboard');
+                      res.send('Login successful!');
                     })
                     .catch(error => {
                       console.error(error);
@@ -300,79 +413,94 @@ loginRouter.post('/', async (req, res) => {
 app.use('/login', loginRouter);
 
 
+// handle requests
+app.get('/cookie', (req, res) => {
+  // get the value of the "remeeber_me" cookie
+
+  const token = req.cookies.remember_me;
+  const email = req.cookies.email;
+
+  res.send('Your cookie value is: token = ' + token
+                                  + ' email = ' + email);
+
+});
+
 
 // Define a router for all HTML pages
 const htmlRouter = express.Router();
+
+
+htmlRouter.get('/dashboard', (req, res) => {
+  // 检查是否已通过身份验证
+  const isAuthenticated = req.cookies.auth === 'true' || req.query.auth === 'true';
+
+  if (isAuthenticated) {
+    // 用户已通过身份验证，显示 dashboard 页面
+    res.sendFile(path.join(__dirname, '/', 'dashboard.html'));
+  } else {
+    // 用户未通过身份验证，重定向到登录页面
+    res.redirect('/login');
+  }
+});
+
+
 htmlRouter.get('/', (req, res) => {
+  const isAuthenticated = req.cookies.auth === 'true' || req.query.auth === 'true';
+  if (isAuthenticated) {
+    // 用户已通过身份验证，显示 dashboard 页面
+    res.redirect('/dashboard');
+    return;
+  }   
   res.sendFile(path.join(__dirname, '/', 'index.html'));
 });
 htmlRouter.get('/index', (req, res) => {
+  const isAuthenticated = req.cookies.auth === 'true' || req.query.auth === 'true';
+  if (isAuthenticated) {
+    // 用户已通过身份验证，显示 dashboard 页面
+    res.redirect('/dashboard');
+    return;
+  }   
   res.sendFile(path.join(__dirname, '/', 'index.html'));
 });
 htmlRouter.get('/index.html', (req, res) => {
+  const isAuthenticated = req.cookies.auth === 'true' || req.query.auth === 'true';
+  if (isAuthenticated) {
+    // 用户已通过身份验证，显示 dashboard 页面
+    res.redirect('/dashboard');
+    return;
+  } 
+
   res.sendFile(path.join(__dirname, '/', 'index.html'));
 });
+
 htmlRouter.get('/register', (req, res) => {
+  const isAuthenticated = req.cookies.auth === 'true' || req.query.auth === 'true';
+  if (isAuthenticated) {
+    // 用户已通过身份验证，显示 dashboard 页面
+    res.redirect('/dashboard');
+    return;
+  } 
+
   res.sendFile(path.join(__dirname, '/', 'register.html'));
 });
 htmlRouter.get('/login', (req, res) => {
+  const isAuthenticated = req.cookies.auth === 'true' || req.query.auth === 'true';
+  if (isAuthenticated) {
+    // 用户已通过身份验证，显示 dashboard 页面
+    res.redirect('/dashboard');
+    return;
+  }
   res.sendFile(path.join(__dirname, '/', 'login.html'));
 });
+
 htmlRouter.get('/fail', (req, res) => {
   res.sendFile(path.join(__dirname, '/', 'fail.html'));
 });
-htmlRouter.get('/dashboard', (req, res) => {
-  res.sendFile(path.join(__dirname, '/', 'dashboard.html'));
+
+htmlRouter.get('/welcome', (req, res) => {
+  res.sendFile(path.join(__dirname, '/', 'welcome.html'));
 });
 
-////////////////////////////////////////////////////////////
-
-// 授权中间件
-app.get('/welcome', (req, res) => {
-
-  // Check cookies for remember me
-  if (req.cookies.remember_me) {
-    const token = req.cookies.remember_me;
-    
-    db.getUserByToken(token)
-      .then(user => {
-        console.log('Please login first A');
-        if (user){
-          console.log('Please login first B');
-          console.log("expires:"+ user.expires + ' new data(): ' + new Date());
-          
-
-          if(user.expires > new Date()) {
-            console.log('Please login first C');
-            req.session.user = user;
-            res.sendFile(path.join(__dirname, '/', 'welcome.html'));
-            return;
-          }else{
-            console.log('Please login first D');
-            res.redirect('/login');
-            return;
-          }
-        } else {
-          console.log('Please login first E');
-          res.redirect('/login');
-          return;
-        }
-      })
-      .catch(error => {
-        console.log('Please login first F');
-        console.error(error);
-        res.status(500).send('Internal server error');
-      });
-  } else {
-    console.log('Please login first B');
-    res.redirect('/login');
-    return;
-  }
-  
-});
-
-
-////////////////////////////////////////////////////////////
 
 app.use('/', htmlRouter);
 
@@ -382,20 +510,28 @@ app.use((req, res) => {
 });
 
 
-const cron = require('node-cron');
-const moment = require('moment');
-
-// Schedule a cron job to delete unverified users and email verification records every 72 hours
+// Schedule a cron job to delete unverified users and email verification records, '0 0 * * *' means every day at 00:00
 cron.schedule('0 0 * * *', async () => {
-  const threshold = moment().subtract(72, 'hours').format('YYYY-MM-DD HH:mm:ss');
-
-  // Delete unverified users
-  await pool.query('DELETE FROM users WHERE email_verified = false AND created_at < ?', [threshold]);
-
   // Delete email verification records
-  await pool.query('DELETE FROM email_verification WHERE created_at < ?', [threshold]);
-});
+  db.timeout_delete_email_verification()
+    .then(() => {
+      console.log('Delete email verification records');
+    })
+    .catch(error => {
+      console.error(error);
+      res.status(500).send('Internal server error');
+    });
 
+  // Delete remember me records
+  db.timeout_delete_remember_me()
+    .then(() => {
+      console.log('Delete remember me records');
+    })
+    .catch(error => {
+      console.error(error);
+      res.status(500).send('Internal server error');
+    });
+});
 
 // Start the server
 app.listen(3000, () => {
@@ -403,14 +539,4 @@ app.listen(3000, () => {
 });
 
 
-/* 
-export config for other modules to use such as in database.js
-const serverConfig = require('./server.js');
-console.log(serverConfig.config.port);
-*/
 
-module.exports = {
-  config: config
-};
-
-// exports.pool = pool;

@@ -12,7 +12,8 @@ const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
   const pool = mysql.createPool({
     host: config.database.host,
     user: config.database.user,
-    password: config.database.password
+    password: config.database.password,
+    database: config.database.database
   });
 
 
@@ -100,14 +101,13 @@ function getUserByEmail(email) {
           console.error('Duplicate email found in users table');
           resolve({
             id: results[0].id,
-
             name: results[0].name,
             email: results[0].email,
             password: results[0].password,
             email_verified: results[0].email_verified,
             register_time: new Date(results[0].register_time)
           });
-        } else {
+        } else { // normal case
           resolve({
             id: results[0].id,
             name: results[0].name,
@@ -116,7 +116,6 @@ function getUserByEmail(email) {
             email_verified: results[0].email_verified,
             register_time: new Date(results[0].register_time)
           });
-
         }
       }
     );
@@ -213,7 +212,7 @@ function deleteVerificationToken(token) {
   });
 }
 
-function verifyUser(email) {
+function updateUserEmailVerified(email) {
   return new Promise((resolve, reject) => {
     pool.query(
       'UPDATE users SET email_verified = true WHERE email = ?',
@@ -242,9 +241,9 @@ function storeToken(email, token, expires) {
 
     // 执行 SQL 查询
     pool.query(
-      'INSERT INTO remember_me (email, token, expires) VALUES (?, ?, ?)',
+      'INSERT INTO remember_me(email, token, expires) VALUES (?, ?, ?)',
       [email, token, formattedDate],
-      (error, results, fields) => {
+      (error, results) => {
         if (error) {
           console.error(error);
           reject(error);
@@ -285,6 +284,60 @@ function getUserByToken(token) {
   });
 }
 
+function updateTokenexpires(token) {
+  return new Promise((resolve, reject) => {
+    // 将日期格式化为 MySQL DATETIME 格式
+    const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
+    const formattedDate = expires.toISOString().slice(0, 19).replace('T', ' ');
+
+    pool.query(
+      'UPDATE remember_me SET expires = ? WHERE token = ?',
+      [formattedDate, token],
+      (error, results) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else {
+          resolve(results);
+        }
+      }
+    );
+  });
+}
+
+
+function timeout_delete_remember_me() {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'DELETE FROM remember_me WHERE expires < NOW()',
+      (error, results) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else {
+          resolve(results);
+        }
+      }
+    );
+  });
+}
+
+function timeout_delete_email_verification() {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'DELETE FROM email_verification WHERE expiry_time < NOW()',
+      (error, results) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else {
+          resolve(results);
+        }
+      }
+    );
+  });
+}
+
 
 
 module.exports = {
@@ -296,9 +349,12 @@ module.exports = {
   storeVerificationToken,
   getVerificationToken,
   deleteVerificationToken,
-  verifyUser,
+  updateUserEmailVerified,
   storeToken,
-  getUserByToken
+  getUserByToken,
+  updateTokenexpires,
+  timeout_delete_remember_me,
+  timeout_delete_email_verification
 };
 
 

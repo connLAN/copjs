@@ -2,10 +2,61 @@
 <html>
   <head>
     <title>My Web System</title>
+    <style>
+      body {
+        background-image: url('snow.jpg');
+        background-repeat: no-repeat;
+        background-position: center center;
+        background-size: cover;
+        font-family: Arial, sans-serif;
+        font-size: 16px;
+        line-height: 1.5;
+        margin: 0;
+        padding: 0;
+      }
+
+      h1 {
+        color: #fff;
+        font-size: 36px;
+        margin: 50px 0 20px;
+        text-align: center;
+      }
+
+      .container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .button {
+        background-color: #333;
+        border: none;
+        border-radius: 5px;
+        color: #fff;
+        cursor: pointer;
+        display: inline-block;
+        font-size: 18px;
+        margin: 10px;
+        padding: 10px 20px;
+        text-align: center;
+        text-decoration: none;
+        transition: background-color 0.3s ease;
+      }
+
+      .button:hover {
+        background-color: #666;
+      }
+    </style>
   </head>
   <body>
-    <h1>Welcome to My Web System</h1>
-    <p>Already have an account? <a href="/login">Log in</a></p>
-    <p>Need to create an account? <a href="/register">Register</a></p>
+    <div class="container">
+      <h1>Welcome to My Web System</h1>
+      <div>
+        <a href="/login" class="button">Log in</a>
+        <a href="/register" class="button">Register</a>
+      </div>
+    </div>
   </body>
 </html>
