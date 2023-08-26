@@ -61,6 +61,15 @@ function initializeDatabase() {
           console.log('remember_me table created or already exists');
         });
 
+        // create password reset table
+        const sql4 = 'CREATE TABLE IF NOT EXISTS password_reset'
+                  + '(id INT PRIMARY KEY AUTO_INCREMENT, email VARCHAR(255) NOT NULL,'
+                  + 'token VARCHAR(255) NOT NULL,expires DATETIME NOT NULL)';
+        connection.query(sql4, (err, result) => {
+          if (err) throw err;
+          console.log('password_reset table created or already exists');
+        });
+
         // Release the MySQL connection
         connection.release();
       });
@@ -305,6 +314,58 @@ function updateTokenexpires(token) {
   });
 }
 
+function storePasswordResetToken(email, token) {
+  return new Promise((resolve, reject) => {
+    // 将日期格式化为 MySQL DATETIME 格式
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
+    const formattedDate = expires.toISOString().slice(0, 19).replace('T', ' ');
+
+    // 执行 SQL 查询
+    pool.query(
+      'INSERT INTO password_reset (email, token, expires) VALUES (?, ?, ?)',
+      [email, token, formattedDate],
+      (error, results) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else {
+          resolve(results);
+        }
+      }
+    );
+  });
+}
+
+function getPasswordResetToken(token) {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'SELECT * FROM password_reset WHERE token = ?',
+      [token],
+      (error, results) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else if (results.length === 0) {
+          resolve(null);
+        } else if (results.length > 1) {
+          console.error('Duplicate token found in password_reset table');
+          resolve({
+            email: results[0].email,
+            expires: new Date(results[0].expires)
+          });
+        } else {
+          resolve({
+            email: results[0].email,
+            expires: new Date(results[0].expires)
+          });
+        }
+      }
+    );
+  });
+}
+
+
+
 
 function timeout_delete_remember_me() {
   return new Promise((resolve, reject) => {
@@ -353,6 +414,8 @@ module.exports = {
   storeToken,
   getUserByToken,
   updateTokenexpires,
+  storePasswordResetToken,
+  getPasswordResetToken,
   timeout_delete_remember_me,
   timeout_delete_email_verification
 };
