@@ -205,9 +205,13 @@ function isEmailVerified(email) {
 
 function storeVerificationToken(email, token) {
   return new Promise((resolve, reject) => {
-    // 将日期格式化为 MySQL DATETIME 格式
+    // 将日期格式化为 MySQL DATETIME 格式,  store created datetime.
     
-    const formattedDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const options = { timeZone: 'China/Shang_Hai' };
+
+    console.log(formattedDate);
+    const formattedDate = new Date().toISOString('en-US', options).slice(0, 19).replace('T', ' ');
+    console.log('storeVerificationToken: formattedDate = ' + formattedDate);
 
     // 执行 SQL 查询
     pool.query(
@@ -239,12 +243,12 @@ function getVerificationToken(email) {
         } else if (results.length > 1) {
           console.error('Duplicate token found in email_verification table');
           resolve({
-            email: results[0].token,
+            token: results[0].token,
             expires: new Date(results[0].expiry_time)
           });
         } else {
           resolve({
-            email: results[0].email,
+            token: results[0].token,
             expires: new Date(results[0].expiry_time)
           });
         }

@@ -12,8 +12,6 @@ const saltRounds = 10;
 
 const validator = require('validator');
 
-const app = express();
-
 const {
   rootPath,
   htmlPath,
@@ -27,16 +25,18 @@ const {
   serveStaticDirectories,
   appConfig
 } = require('./router/app_config');
-
-// Serve static files from the "public" directory
-serveStaticDirectories(app);
 const config = appConfig;
+
+const app = express();
+serveStaticDirectories(app);
 
 // Parse JSON and URL-encoded query parameters
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+const bodyParser = require('body-parser');
+app.use(bodyParser.json());
 
 function sessionHandler(app, config) {
   app.use(session({
@@ -53,7 +53,7 @@ app.use(accessLogger);
 
 // Connect to the MySQL server and create the "mydb" database and users table
 // call database.js
-const db = require('./database');
+const db = require( path.join(rootPath, '/database'));
 
 // Initialize the database
 db.initializeDatabase();
@@ -64,14 +64,23 @@ app.use(mainRouter.checkAuthentication);   // cover all methods, including GET, 
 
 const registerRouter = require('./router/register');
 app.post('/register', registerRouter.registerHandler);
-app.get('/verify', registerRouter.verifyHandler);
+app.get('/verifyRegister', registerRouter.verifyRegisterHandler);
 
 
-loginRouter = require(path.join(routerPath + '/login'));
+const loginRouter = require(path.join(routerPath + '/login'));
 app.post('/login', loginRouter.loginHandler);
 
-forgotPasswordRouter = require(path.join(routerPath + '/forgot_password'));
-app.post('/forgot_password', forgotPasswordRouter.forgotPasswordHandler);
+const {
+  forgotPasswordHandler
+} = require(path.join(routerPath + '/forgot_password'));
+app.post('/forgot_password', forgotPasswordHandler);
+
+const {  
+  verifyResetPasswordHandler,
+  resetPasswordHandler
+} = require(path.join(routerPath + '/reset_password'));
+app.post('/verify_reset_password', verifyResetPasswordHandler);
+app.post('/do_reset_password', resetPasswordHandler);
 
 app.use(mainRouter.htmlRouter);
 app.use(mainRouter.notFoundHandler);

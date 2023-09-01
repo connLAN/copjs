@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Register</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f2f2f2;
+        background-image: url('snow.jpg');
+        background-repeat: no-repeat;
+        background-position: center center;
+        background-size: cover;
+        font-family: Arial, sans-serif;
+        font-size: 16px;
+        line-height: 1.5;
+        margin: 0;
+        padding: 0;
+      }
+      h1 {
+        text-align: center;
+        margin-top: 50px;
+      }
+      form {
+        max-width: 500px;
+        margin: 0 auto;
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      label {
+        display: block;
+        margin-bottom: 10px;
+        font-weight: bold;
+      }
+      input[type="text"],
+      input[type="email"],
+      input[type="password"] {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        box-sizing: border-box;
+      }
+      input[type="text"]::placeholder,
+      input[type="email"]::placeholder,
+      input[type="password"]::placeholder {
+        color: #999;
+      }
+      button[type="submit"] {
+        background-color: #4CAF50;
+        color: #fff;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1em;
+        margin-top: 20px;
+      }
+      button[type="submit"]:hover {
+        background-color: #3e8e41;
+      }
+      .error-message {
+        color: red;
+        margin-top: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Register</h1>
+    <form action="/register" method="POST" onsubmit="return validateForm()">
+      <label for="username">Username:</label>
+      <input type="text" id="username" name="username" placeholder="Enter your username" required>
+      <!-- <span class="input-hint">Please enter your username</span> -->
+      <span id="username-error" class="error-message"></span>
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email" placeholder="Enter your email" required>
+      <!-- <span class="input-hint">Please enter your email address</span> -->
+      <span id="email-error" class="error-message"></span>
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password" placeholder="Enter your password" required>
+      <!-- <span class="input-hint">Please enter your password</span> -->
+      <span id="password-error" class="error-message"></span>
+      <span class="error-message"></span>
+      <button type="submit">Register</button>
+    </form>
+    <p style="text-align: center;">Already have an account? <a href="/login">Login here.</a></p>
+
+    <script>
+      function validateForm() {
+        const username = document.getElementById('username').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const usernameError = document.getElementById('username-error');
+        const emailError = document.getElementById('email-error');
+        const passwordError = document.getElementById('password-error');
+        let isValid = true;
+
+        // Check if username is not empty
+        if (username === '') {
+          usernameError.textContent = 'Please enter your username';
+          isValid = false;
+        } else {
+          usernameError.textContent = '';
+        }
+
+        // Check if email is valid
+        if (!/\S+@\S+\.\S+/.test(email)) {
+          emailError.textContent = 'Please enter a valid email address';
+          isValid = false;
+        } else {
+          emailError.textContent = '';
+        }
+
+        // Check if password is at least 8 characters long
+        if (password.length < 8) {
+          passwordError.textContent = 'Password must be at least 8 characters long';
+          isValid = false;
+        } else {
+          passwordError.textContent = '';
+        }
+
+        // Check for SQL injection and other attacks
+        const regex = /['";:]/;
+        if (regex.test(username) || regex.test(email) || regex.test(password)) {
+          usernameError.textContent = 'Invalid input';
+          emailError.textContent = 'Invalid input';
+          passwordError.textContent = 'Invalid input';
+          isValid = false;
+        }
+
+        return isValid;
+      }
+
+
+      const form = document.querySelector('form');
+      const nameInput = document.getElementById('username');
+      const emailInput = document.getElementById('email');
+      const passwordInput = document.getElementById('password');
+
+      form.addEventListener('submit', (event) => {
+        // Prevent the form from submitting
+        event.preventDefault();
+
+        alert("hello-- " + nameInput.value + " " + emailInput.value + " " + passwordInput.value);
+
+        if(!validateForm()){
+          alert("Invalid input");
+          return; 
+        }
+
+        // Validate the form inputs
+        if (nameInput.validity.valid && emailInput.validity.valid && passwordInput.validity.valid) {
+          // Create a new user object with the form data
+          const user = {
+            name: nameInput.value,
+            email: emailInput.value,
+            password: passwordInput.value
+          };
+
+          // Send a POST request to the server to register the user
+          fetch('/register', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(user)
+          })
+          .then(response => {
+
+            alert("HELLO ++++ "  + response.status + " " + response.statusText);
+
+            if (response.ok) {
+              // Redirect to the login page
+              window.location.href = '/login';
+            } else {
+ 
+
+              response.text().then(text => {
+                 alert("WARNING: "+ text); // Print the response text to the console
+
+                const errorMessage = form.querySelector('.error-message');
+                errorMessage.textContent = text;
+
+            });
+ 
+            }
+
+          })
+          .catch(error => {
+            console.error(error);
+            alert('An error occurred while registering ' + error);
+          });
+      }
+      });
+
+
+    </script>
+  </body>
+</html>

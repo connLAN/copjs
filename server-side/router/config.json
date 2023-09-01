@@ -1,0 +1,31 @@
+{
+  "web":{
+    "domain":"192.168.2.180"
+  },
+
+  "session":{
+    "secret":"my-session-secret-123!",
+    "verify_token_timeout_in_seconds": 86400
+  },
+
+  "port": 3000,
+
+  "database": {
+    "type": "mariadb",
+    "host": "localhost",
+    "port": 3306,
+    "user": "tiny",
+    "password": "password",
+    "database": "mydb"
+  },
+
+  "email": {
+    "host": "smtp.qq.com",
+    "port": 587,
+    "secure": "false",
+    "auth": {
+      "user": "44514285@qq.com",
+      "pass": "msthnqahawcqbjed"
+    }
+  }
+}

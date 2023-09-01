@@ -1,0 +1,31 @@
+<body>
+    <h1>Reset Password</h1>
+    <div id="forgot-password-form">
+        <form action="/forgot_password" method="POST" onsubmit="return validateForgotPasswordForm()">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" placeholder="Enter your email" required>
+            <span id="email-error" class="error-message"></span>
+            <button type="submit">Reset Password</button>
+        </form>
+    </div>
+    <!-- <div id="reset-password-form" style="display: none;"> -->
+        <div id="reset-password-form">
+        <form action="/reset_password" method="POST" onsubmit="return validateResetPasswordForm()">
+            <input type="hidden" id="email" name="email">
+            <input type="hidden" id="token" name="token">
+            <label for="password">New Password:</label>
+            <input type="password" id="password" name="password" placeholder="Enter your new password" required>
+            <span id="password-error" class="error-message"></span>
+            <button type="submit">Reset Password</button>
+        </form>
+    </div>
+    <p style="text-align: center;">Remember your password? <a href="/login">Login here.</a></p>
+    <script>
+        function validateForgotPasswordForm() {
+            // Your code here
+        }
+        function validateResetPasswordForm() {
+            // Your code here
+        }
+    </script>
+</body>
