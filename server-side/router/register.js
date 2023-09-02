@@ -105,7 +105,7 @@ async function registerHandler(req, res) {
   
       // Send the verification token to the user's email address
       // Define the email message
-      sendMail(email, 'Verification Token', 'Your have just registered ' + config.web.domain +'\n'
+      sendMail(email, 'Register Verification Token', 'Your have just registered ' + config.web.domain +'\n'
           +'\n' 
           + 'Please click the link below to verify your email address:'
           + 'http://'

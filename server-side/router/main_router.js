@@ -23,8 +23,29 @@ function checkAuthentication(req, res, next) {
                           '/forgot_password',
                           '/reset_password',
                           '/fail', 
-                          '/verify',
-                          '/test'];
+                          '/verifyRegister',
+                          '/test',
+                          '/webfonts/fa-solid-900.woff2',
+                          '/webfonts/fa-solid-900.woff',
+                          '/webfonts/fa-solid-900.ttf',
+                          '/webfonts/fa-solid-900.svg',
+                          '/webfonts/fa-brands-400.woff2',
+                          '/webfonts/fa-brands-400.woff',
+                          '/webfonts/fa-brands-400.ttf',
+                          '/webfonts/fa-brands-400.svg',
+                          '/css/bootstrap.min.css',
+                          '/css/all.min.css',
+                          '/js/jquery.min.js',
+                          '/js/bootstrap.min.js',
+                          '/js/all.min.js',
+                          '/js/axios.min.js',
+                          '/js/vue.min.js',
+                          '/js/vue-router.min.js',
+                          '/js/vue-i18n.min.js',
+                          '/js/vue-axios.min.js',
+                        ];
+                          
+    console.log('MAIN ROUTER: req.path = ' + req.path);
                           
     if (excludedPaths.includes(req.path)) {
       // Skip middleware for excluded paths

@@ -80,7 +80,7 @@ const {
   resetPasswordHandler
 } = require(path.join(routerPath + '/reset_password'));
 app.post('/verify_reset_password', verifyResetPasswordHandler);
-app.post('/do_reset_password', resetPasswordHandler);
+app.post('/reset_password', resetPasswordHandler);
 
 app.use(mainRouter.htmlRouter);
 app.use(mainRouter.notFoundHandler);

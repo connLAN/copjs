@@ -56,10 +56,13 @@ verifyResetPasswordHandler.post('/', async (req, res) => {
 // Define a router for the password reset form submissions
 const resetPasswordHandler = express.Router();
 resetPasswordHandler.post('/', async (req, res) => {
+  console.log('resetPasswordHandler');
   const { email, token, password } = req.body;
-  
+  console.log('email = ' + email + ' token = ' + token + ' password = ' + password);
+
   // Validate input
   if (!email || !token || !password) {
+    console.log('Email, token and password are required');
     res.status(400).send('Email, token and password are required');
     return;
   }
@@ -70,21 +73,24 @@ resetPasswordHandler.post('/', async (req, res) => {
   
   if(sanitizedEmail !== email
     || !validator.isEmail(sanitizedEmail)){
-    res.status(400).send('Invalid email input');
+      console.log('Invalid email input 111');
+    res.status(400).send('Invalid email input 111');
     return;
   }
 
   if(sanitizedToken !== token
     || !validator.isLength(sanitizedToken, {min: 32, max: 32})
     || !validator.isAlphanumeric(sanitizedToken)){
-    res.status(400).send('Invalid token input');
+    console.log('Invalid token input 222');
+    res.status(400).send('Invalid token input 222');
     return;
   }
 
   if(sanitizedPassword !== password
     || !validator.isLength(sanitizedPassword, {min: 8, max: 20})
     || !validator.isAlphanumeric(sanitizedPassword)){
-    res.status(400).send('Invalid password input');
+    console.log('Invalid password input 333');
+    res.status(400).send('Invalid password input 333');
     return;
   }
 

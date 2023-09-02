@@ -2,7 +2,39 @@
 <html>
   <head>
     <title>Login</title>
+ 
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/all.min.css">
+
     <style>
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            font-size: 1rem;
+        }
+        .form-group .input-group-append {
+            cursor: pointer;
+        }
+        .form-group .input-group-append i {
+            padding: 0.5rem;
+        }
+        .error {
+            color: red;
+            margin-top: 0.25rem;
+        }
+
+
       body {
         font-family: Arial, sans-serif;
         background-color: #f2f2f2;
@@ -72,12 +104,38 @@
       <input type="email" id="email" name="email" placeholder="Enter your email" required>
       <!-- <span class="input-hint">Please enter your email address</span> -->
       <span id="email-error" class="error-message"></span>
-      <label for="password">Password:</label>
-      <input type="password" id="password" name="password" placeholder="Enter your password" required>
+
+      <!-- <label for="password">Password:</label>
+      <input type="password" id="password" name="password" placeholder="Enter your password" required> -->
       <!-- <span class="input-hint">Please enter your password</span> -->
 
+      <div class="form-group">
+        <label for="password">Password:</label>
+
+        <div class="input-group">
+            <input 
+              type="password" 
+              id="password" 
+              name="password" 
+              class="form-control"
+              placeholder="8~20 characters, only alphanumeric characters"
+              required 
+            >
+
+            <div class="input-group-append d-flex align-items-center">
+                <span class="input-group-text" style="width: 60px; height: 38px; padding-right: 10px; border-right: 1px solid #ced4da;">
+                    <i class="fas fa-eye" id="toggle-password"></i>
+                </span>
+            </div>
+        </div>
+
+        <span id="password-error" class="error-message"></span>
+        <span class="error-message"></span>
+      </div>
+
+
       <div>
-        <input type="checkbox" id="remember-me" name="rememberMe">
+        <input type="checkbox" id="remember-me" name="rememberMe" checked>
         <label for="remember-me">Remember me</label>
       </div>
 
@@ -85,9 +143,33 @@
       <span class="error-message"></span>
       <button type="submit">Login</button>
     </form>
+    
     <p style="text-align: center;">Don't have an account? <a href="/register">Register here.</a></p>
     <p  style="text-align: center;">Forgot your password? <a href="/forgot_password">Recover forgot password</a>.</p>
     
+  
+    <script src="/js/jquery-3.5.1.slim.min.js"></script>
+    <script src="/js/popper-base.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+
+    <script>
+      const togglePassword = document.getElementById('toggle-password');
+      const password = document.getElementById('password');
+
+      togglePassword.addEventListener('click', function() {
+          if (password.type === 'password') {
+              password.type = 'text';
+              togglePassword.classList.remove('fa-eye');
+              togglePassword.classList.add('fa-eye-slash');
+          } else {
+              password.type = 'password';
+              togglePassword.classList.remove('fa-eye-slash');
+              togglePassword.classList.add('fa-eye');
+          }
+      });
+    </script>
+
+
     <script>
       function validateForm() {
         const email = document.getElementById('email').value;

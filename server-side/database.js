@@ -206,11 +206,7 @@ function isEmailVerified(email) {
 function storeVerificationToken(email, token) {
   return new Promise((resolve, reject) => {
     // 将日期格式化为 MySQL DATETIME 格式,  store created datetime.
-    
-    const options = { timeZone: 'China/Shang_Hai' };
-
-    console.log(formattedDate);
-    const formattedDate = new Date().toISOString('en-US', options).slice(0, 19).replace('T', ' ');
+    const formattedDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
     console.log('storeVerificationToken: formattedDate = ' + formattedDate);
 
     // 执行 SQL 查询
