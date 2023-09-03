@@ -20,7 +20,7 @@ const {
   appConfig
 } = require('./app_config');
 
-const db = require(path.join(rootPath + '/database'));
+const db = require(path.join(databasePath + '/database'));
 const config = appConfig;
 console.log('config.web.domain = ' + config.web.domain);
 console.log('config.port = ' + config.port);

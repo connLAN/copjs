@@ -4,63 +4,45 @@ const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const path = require('path');
 
-// Define a router for the password reset link
-const verifyResetPasswordHandler = express.Router();
-verifyResetPasswordHandler.post('/', async (req, res) => {
-  const { email, token } = req.query;
+const {
+    rootPath,
+    htmlPath,
+    publicPath,
+    imgPath,
+    routerPath,
+    commonPath,
+    databasePath,
+    configPath,
+    cronPath,
+    serveStaticDirectories,
+    appConfig
+} = require('./app_config');
+const config = appConfig;
 
-  // Check if the password reset token is valid
-  db.getPasswordResetToken(email)
-    .then(token => {
-      if (token) {
-        console.log('email = ' + email + ' token = ' + token);
-
-        // Check if the password reset token has expired
-        const expires = new Date(token.created_at).getTime() 
-          + config.session.password_reset_token_timeout_in_seconds*1000;
-
-        if (expires < Date.now()) {
-          // Password reset token has expired
-          db.deletePasswordResetToken(email)
-            .then(() => {
-              // console.log('Password reset token has expired');
-              res.send('Password reset token has expired');
-              return;
-            })
-            .catch(error => {
-              console.error(error);
-              res.status(500).send('Internal server error: when deleting password reset token');
-              return;
-            });
-          return;
-        }else{
-          console.log('Password reset token has not expired');
-          //////
-          res.sendFile(path.join(__dirname, '/', 'reset_password.html')); // ? 
-          return;
-        }
-
-      } else {
-        console.log('Password reset token not found');
-        res.status(400).send('Password reset token not found');
-        return;
-      }
-    })
-    .catch(error => {
-      console.error(error);
-      res.status(500).send('Internal server error: when getting password reset token'); 
-    });
-});
+const email = require('./email');
+const db = require( path.join(databasePath, '/database'));
 
 
-// Define a router for the password reset form submissions
-const resetPasswordHandler = express.Router();
-resetPasswordHandler.post('/', async (req, res) => {
+
+// verifyResetPasswordHandler
+async function verifyResetPasswordHandler(req, res) {
+    console.log('verifyResetPasswordHandler');
+    // const { email,  password } = req.body;
+    const { email, token,password } = req.query;
+    console.log('email: ', email  + ' password: ' + password);
+    res.send('verifyResetPasswordHandler');
+
+    return;
+}
+
+
+
+// reset password handler
+async function resetPasswordHandler(req, res) {
   console.log('resetPasswordHandler');
   const { email, token, password } = req.body;
   console.log('email = ' + email + ' token = ' + token + ' password = ' + password);
 
-  // Validate input
   if (!email || !token || !password) {
     console.log('Email, token and password are required');
     res.status(400).send('Email, token and password are required');
@@ -95,64 +77,83 @@ resetPasswordHandler.post('/', async (req, res) => {
   }
 
   // Check if the password reset token is valid
-  db.getPasswordResetToken(email) 
-    .then(token => {
-      if (token) {
-        console.log('email = ' + email + ' token = ' + token);
+  const resetToken = await db.getPasswordResetToken(email);
 
-        // Check if the password reset token has expired
-        const expires = new Date(token.created_at).getTime() + config.session.password_reset_token_timeout_in_seconds;
-        if (expires < Date.now()) {
-          // Password reset token has expired
-          db.deletePasswordResetToken(email)
-            .then(() => {
-                console.log('Password reset token has expired');
-                res.status(400).send('Password reset token has expired');
-            })
-            .catch(error => {
-              console.error(error);
-              res.status(500).send('Internal server error: when deleting password reset token');
-            });
-          return;
-        }else{
-          console.log('Password reset token has not expired');
-          // Hash the password using bcrypt
-          const hashedPassword = bcrypt.hashSync(password, saltRounds);
-          db.updateUserPassword(email, hashedPassword)
-            .then(() => {
-              console.log('User password updated');
-            })
-            .catch(error => {
-              console.error(error);
-              res.status(500).send('Internal server error: when updating user password');
-            });
+  if (!resetToken || resetToken.length === 0 || resetToken.token === null) {
+    console.log('Password reset token not found');
+    res.status(400).send('Password reset token not found');
+    return;
+  }
 
-          db.deletePasswordResetToken(email)
-            .then(() => {
-              console.log('Password reset token deleted');
-            })
-            .catch(error => {
-              console.error(error);
-              res.status(500).send('Internal server error: when deleting password reset token');
-            });
+  console.log('resetToken = ' + JSON.stringify(resetToken));
 
-          res.send('Password reset successful!');
-        }
+  console.log( 'resetToken = ' + resetToken
+             + 'resetToken.token = ' + resetToken.token
+             + ' token = ' + resetToken.token + ' email = ' + resetToken.email
+             + ' resetToken.expires = ' + resetToken.expires
+             );
 
-      } else {
-        console.log('Password reset token not found');
-        res.status(400).send('Password reset token not found');
-        return;
-      }
+  console.log('AAA resetToken.token = ' + resetToken.token + ' token = ' + token);
+  // Check if the password reset token matches
+  if (resetToken.token !== token) {
+    console.log('Password reset token does not match');
+    res.status(400).send('Password reset token does not match');
+    return;
+  }
+
+
+
+  // Check if the password reset token has expired
+  const expires = new Date(resetToken.created_at).getTime()
+    + config.session.password_reset_token_timeout_in_seconds*1000;
+
+  if (expires < Date.now()) {
+    // Password reset token has expired
+    db.deletePasswordResetToken(email)
+      .then(() => {
+          console.log('Password reset token has expired, delete it');
+          res.status(400).send('Password reset token has expired');
+      })
+      .catch(error => {
+        console.error(error);
+        res.status(500).send('Internal server error: when deleting expired token');
+      });
+    return;
+  }
+
+  // Hash the password using bcrypt
+  const saltRounds = 10;
+  const hashedPassword = bcrypt.hashSync(password, saltRounds);
+
+  // Update the user's password
+  db.updateUserPassword(email, hashedPassword)
+    .then(() => {
+      console.log('User password updated');
     })
     .catch(error => {
       console.error(error);
-      res.status(500).send('Internal server error: when getting password reset token');
+      res.status(500).send('Internal server error: when updating user password');
     });
-});
-// Mount the router on the app
 
-module.exports = {  
-  verifyResetPasswordHandler,
-  resetPasswordHandler
+  // Delete the password reset token
+  db.deletePasswordResetToken(email)
+    .then(() => {
+      console.log('Password reset token deleted');
+    })
+    .catch(error => {
+      console.error(error);
+      res.status(500).send('Internal server error: when deleting password reset token');
+    });
+
+  res.send('Password reset successful!');
+  return;
+}
+ 
+  
+module.exports = {
+    verifyResetPasswordHandler,
+    resetPasswordHandler,
 };
+
+
+

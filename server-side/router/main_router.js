@@ -1,5 +1,7 @@
 const express = require('express');
 const path = require('path');
+fs = require('fs');
+const morgan = require('morgan');
 
 const {
   rootPath,
@@ -15,13 +17,14 @@ const {
   appConfig
 } = require('./app_config');
 
-const db = require(path.join(rootPath + '/database'));
+const db = require(path.join(databasePath + '/database'));
 
 
 function checkAuthentication(req, res, next) {
     const excludedPaths = ['/register',
                           '/forgot_password',
-                          '/reset_password',
+                          '/reset_password', 
+                          '/reset_password000',
                           '/fail', 
                           '/verifyRegister',
                           '/test',
@@ -45,8 +48,10 @@ function checkAuthentication(req, res, next) {
                           '/js/vue-axios.min.js',
                         ];
                           
-    console.log('MAIN ROUTER: req.path = ' + req.path);
-                          
+    // const accessLogStream = fs.createWriteStream(path.join(__dirname, 'a01.log'), { flags: 'a' });
+    // morgan('combined', { stream: accessLogStream })(req, res, next);
+    console.log('MAIN ROUTER: req.path = ' + req.path + '  req.method = ' + req.method);
+  
     if (excludedPaths.includes(req.path)) {
       // Skip middleware for excluded paths
       console.log('Skip middleware for excluded paths');

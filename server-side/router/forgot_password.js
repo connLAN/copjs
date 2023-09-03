@@ -27,7 +27,7 @@ const {
 } = require('./app_config');
 const config = appConfig;
 
-const db = require( path.join(rootPath, '/database'));
+const db = require( path.join(databasePath, '/database'));
 
 const {
     transporter,
@@ -79,7 +79,7 @@ async function forgotPasswordHandler(req, res) {
             from: config.email.auth.user,
             to: email,
             subject: 'Password Reset Token',
-            text: 'Your have just requested a password reset for ' + config.web.domain +'\n'
+            html: 'Your have just requested a password reset for ' + config.web.domain +'\n'
                 +'\n'
                 + 'The token for reset password is showed below.\n'
                 +  token + '\n'
@@ -99,7 +99,7 @@ async function forgotPasswordHandler(req, res) {
             }
         });
 
-        res.send('Password reset token sent to your email address\nPlease check your email');
+        res.send('Password reset token has sent to your email address\nPlease check your email');
         return;
 
     } else {

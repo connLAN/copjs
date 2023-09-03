@@ -47,13 +47,13 @@ function sessionHandler(app, config) {
 }
 sessionHandler(app, config);
 
-// write access log
-accessLogger = require('./router/common');
-app.use(accessLogger);
+// // write access log
+// accessLogger = require('./router/common');
+// app.use(accessLogger);
 
 // Connect to the MySQL server and create the "mydb" database and users table
 // call database.js
-const db = require( path.join(rootPath, '/database'));
+const db = require( path.join(databasePath, '/database'));
 
 // Initialize the database
 db.initializeDatabase();
@@ -75,12 +75,12 @@ const {
 } = require(path.join(routerPath + '/forgot_password'));
 app.post('/forgot_password', forgotPasswordHandler);
 
-const {  
-  verifyResetPasswordHandler,
+const {
+  verifyResetPasswordHandler,  
   resetPasswordHandler
 } = require(path.join(routerPath + '/reset_password'));
 app.post('/verify_reset_password', verifyResetPasswordHandler);
-app.post('/reset_password', resetPasswordHandler);
+app.post('/reset_password000', resetPasswordHandler);
 
 app.use(mainRouter.htmlRouter);
 app.use(mainRouter.notFoundHandler);
