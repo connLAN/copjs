@@ -5,7 +5,12 @@
 
   "session":{
     "secret":"my-session-secret-123!",
-    "verify_token_timeout_in_seconds": 86400
+    "cookieExpires": 2592000000,
+    "verify_token_timeout_in_seconds": 86400,
+    "session_timeout_in_seconds": 86400,
+    "max_number_of_sessions_per_user": 10,
+    "max_number_of_sessions_per_client": 10,
+    "max_number_of_sessions_per_ip": 10
   },
 
   "port": 3000,

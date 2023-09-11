@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Gallery</title>
+    <style>
+        #image-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        #image-grid img {
+            width: 30%;
+            height: auto;
+            margin: 10px;
+            cursor: pointer;
+        }
+
+        #large-image {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 90%;
+            max-height: 90%;
+            z-index: 9999;
+            display: none;
+        }
+
+        #close-button {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .page-link {
+            display: inline-block;
+            padding: 8px 16px;
+            text-decoration: none;
+            color: black;
+            border: 1px solid #ddd;
+            margin-right: 5px;
+        }
+
+        .page-link.active {
+            background-color: #4CAF50;
+            color: white;
+            border: 1px solid #4CAF50;
+        }
+
+        .page-link:hover:not(.active) {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div id="image-grid"></div>
+
+    <div id="pagination"></div>
+
+    <img id="large-image" onclick="hideImage()" src="">
+    <div id="close-button" onclick="hideImage()">&times;</div>
+
+    <script>
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', 'images.json');
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                try {
+                    var images = JSON.parse(xhr.responseText);
+                    var imageGrid = document.getElementById('image-grid');
+                    var pagination = document.getElementById('pagination');
+                    if (imageGrid && pagination) {
+                        var currentPage = 1;
+                        var imagesPerPage = 12;
+                        var totalPages = Math.ceil(images.length / imagesPerPage);
+
+                        function showPage(page) {
+                            currentPage = page;
+                            imageGrid.innerHTML = '';
+                            for (var i = (page - 1) * imagesPerPage; i < page * imagesPerPage && i < images.length; i++) {
+                                const image = images[i];
+                                const smallImg = document.createElement('img');
+                                smallImg.src = image.url;
+                                smallImg.onclick = function() {
+                                    showImage(image.url);
+                                };
+                                imageGrid.appendChild(smallImg);
+                            }
+
+                            pagination.innerHTML = '';
+                            var startPage = Math.max(1, currentPage - 10);
+                            var endPage = Math.min(totalPages, currentPage + 10);
+                            for (var i = startPage; i <= endPage; i++) {
+                                (function(page) {
+                                    const pageLink = document.createElement('a');
+                                    pageLink.href = '#';
+                                    pageLink.innerHTML = page;
+                                    pageLink.onclick = function() {
+                                        showPage(page);
+                                        return false;
+                                    };
+                                    if (page === currentPage) {
+                                        pageLink.classList.add('active');
+                                    }
+                                    pagination.appendChild(pageLink);
+                                    if (i < endPage) {
+                                        const spacer = document.createElement('span');
+                                        spacer.innerHTML = '&nbsp;';
+                                        pagination.appendChild(spacer);
+                                    }
+                                })(i);
+                            }
+                            if (currentPage > 11) {
+                                const firstPageLink = document.createElement('a');
+                                firstPageLink.href = '#';
+                                firstPageLink.innerHTML = 'First';
+                                firstPageLink.onclick = function() {
+                                    showPage(1);
+                                    return false;
+                                };
+                                pagination.insertBefore(firstPageLink, pagination.firstChild);
+                            }
+                            if (currentPage < totalPages - 10) {
+                                const lastPageLink = document.createElement('a');
+                                lastPageLink.href = '#';
+                                lastPageLink.innerHTML = 'Last';
+                                lastPageLink.onclick = function() {
+                                    showPage(totalPages);
+                                    return false;
+                                };
+                                pagination.appendChild(lastPageLink);
+                            }
+                        }
+
+                        showPage(currentPage);
+                    } else {
+                        console.log('Error: imageGrid or pagination is null or undefined');
+                    }
+                } catch (e) {
+                    console.log('Error parsing JSON: ' + e);
+                }
+            } else {
+                console.log('Request failed.  Returned status of ' + xhr.status);
+            }
+        };
+        xhr.send();
+
+        function showImage(imageUrl) {
+            var largeImage = document.getElementById('large-image');
+            largeImage.src = imageUrl;
+            largeImage.style.display = 'block';
+        }
+
+        function hideImage() {
+            var largeImage = document.getElementById('large-image');
+            largeImage.style.display = 'none';
+        }
+    </script>
+</body>
+</html>

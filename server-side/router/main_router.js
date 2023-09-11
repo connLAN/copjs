@@ -19,50 +19,47 @@ const {
 
 const db = require(path.join(databasePath + '/database'));
 
+const {
+  redisClient,
+  getSessionId,
+  storeSessionId,
+  checkSession
+} = require(path.join(routerPath + '/session'));
 
 function checkAuthentication(req, res, next) {
-    const excludedPaths = ['/register',
-                          '/forgot_password',
-                          '/reset_password', 
-                          '/reset_password000',
-                          '/fail', 
-                          '/verifyRegister',
-                          '/test',
-                          '/webfonts/fa-solid-900.woff2',
-                          '/webfonts/fa-solid-900.woff',
-                          '/webfonts/fa-solid-900.ttf',
-                          '/webfonts/fa-solid-900.svg',
-                          '/webfonts/fa-brands-400.woff2',
-                          '/webfonts/fa-brands-400.woff',
-                          '/webfonts/fa-brands-400.ttf',
-                          '/webfonts/fa-brands-400.svg',
-                          '/css/bootstrap.min.css',
-                          '/css/all.min.css',
-                          '/js/jquery.min.js',
-                          '/js/bootstrap.min.js',
-                          '/js/all.min.js',
-                          '/js/axios.min.js',
-                          '/js/vue.min.js',
-                          '/js/vue-router.min.js',
-                          '/js/vue-i18n.min.js',
-                          '/js/vue-axios.min.js',
-                        ];
-                          
-    // const accessLogStream = fs.createWriteStream(path.join(__dirname, 'a01.log'), { flags: 'a' });
-    // morgan('combined', { stream: accessLogStream })(req, res, next);
-    console.log('MAIN ROUTER: req.path = ' + req.path + '  req.method = ' + req.method);
+    console.log('MAIN ROUTER: req.path = ' + req.path
+               + '  req.method = ' + req.method
+               + '  req.session.id = ' + req.session.id);
+
+    
+    const excludedPaths = [
+      /^\/register/,
+      /^\/forgot_password/,
+      /^\/reset_password/,
+      /^\/fail/,
+      /^\/verifyRegister/,
+      /^\/test/,
+      /^\/webfonts\/fa-solid-900\.(woff2|woff|ttf|svg)/,
+      /^\/webfonts\/fa-brands-400\.(woff2|woff|ttf|svg)/,
+      /^\/css\/bootstrap\.min\.css/,
+      /^\/bg\d+\.html$/, // Exclude paths like bg1.html, bg2.html, bg3.html
+      /^.*\.jpg$/,// Exclude all paths that end with .jpg
+      /^.*\.mp4$/,// Exclude all paths that end with .mp4
+      /^.*\.webm$/,// Exclude all paths that end with .webm
+      /^.*\.srt$/,// Exclude all paths that end with .srt
+      /^.*\.json$/,// Exclude all paths that end with .json
+      /^.*\.php$/ // Exclude all paths that end with .php
+    ];
   
-    if (excludedPaths.includes(req.path)) {
-      // Skip middleware for excluded paths
-      console.log('Skip middleware for excluded paths');
-      next();
-      return;
+    if (excludedPaths.some(path => path.test(req.path))) {
+      return next();
     }
-  
+
+
     // Check if user is authenticated
     const isAuthenticated = req.cookies.auth === 'true' || req.query.auth === 'true';
     if (isAuthenticated) {
-      console.log('isAuthenticated, direct to dashboard AAA');
+      console.log('isAuthenticated, next()');
       next();
       return;
     }
@@ -114,33 +111,25 @@ function checkAuthentication(req, res, next) {
         .catch(error => {
           console.error(error);
           res.status(500).send('Internal server error');
+          return;
         });
     } else {
       console.log('Remember me not OK, redirecting to login');
       res.redirect('/login');
       return;
     }
+    
+
+    return next();
 }
 
 
 // Define a router for all HTML pages
 const htmlRouter = express.Router();
 
-function dashboardHandler(req, res) {
-    // Check if user is authenticated
-    const isAuthenticated = req.cookies.auth === 'true' || req.query.auth === 'true';
-
-    if (isAuthenticated) {
-        // User is authenticated, show dashboard page
-        res.sendFile(path.join(htmlPath, 'dashboard.html'));
-    } else {
-        // User is not authenticated, redirect to login page
-        console.Console('not authenticated, direct to login');
-        res.redirect('/login');
-    }
-}  
-htmlRouter.get('/dashboard', dashboardHandler);
-
+htmlRouter.get('/dashboard', (req, res) => {
+    res.sendFile(path.join(htmlPath, 'dashboard.html'));
+}); 
 
 htmlRouter.get('/forgot_password', (req, res) => {
   res.sendFile(path.join(htmlPath, 'forgot_password.html'));
@@ -204,6 +193,10 @@ htmlRouter.get('/login', (req, res) => {
   res.sendFile(path.join(htmlPath, 'login.html'));
 });
 
+htmlRouter.get('/logout', (req, res) => {
+  res.sendFile(path.join(htmlPath, 'logout.html'));
+});
+
 htmlRouter.get('/fail', (req, res) => {
   res.sendFile(path.join(htmlPath, 'fail.html'));
 });
@@ -216,6 +209,34 @@ htmlRouter.get('/welcome', (req, res) => {
 htmlRouter.get('/test', (req, res) => {
   res.sendFile(path.join(htmlPath, 'test.html'));
 });
+
+htmlRouter.get('/courses', (req, res) => {
+  res.sendFile(path.join(htmlPath, 'courses.html'));
+});
+
+htmlRouter.get('/courses.html', (req, res) => {
+  res.sendFile(path.join(htmlPath, 'courses.html'));
+});
+
+htmlRouter.get('/order', (req, res) => {
+  res.sendFile(path.join(htmlPath, 'order.html'));
+});
+
+htmlRouter.get('/order.html', (req, res) => {
+  res.sendFile(path.join(htmlPath, 'order.html'));
+});
+
+htmlRouter.get('/learning', (req, res) => {
+  res.sendFile(path.join(htmlPath, 'learning.html'));
+});
+htmlRouter.get('/learning.html', (req, res) => {
+  res.sendFile(path.join(htmlPath, 'learning.html'));
+});
+
+
+
+
+
 
 function notFoundHandler(req, res) {
   res.status(404).sendFile(path.join(htmlPath, '404.html'));

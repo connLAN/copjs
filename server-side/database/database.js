@@ -1,5 +1,9 @@
 const mysql = require('mysql');
 
+const express = require('express');
+const session = require('express-session');
+const RedisStore = require('connect-redis').default;
+const redis = require('redis');
 
 const {
   rootPath,
@@ -50,42 +54,133 @@ function initializeDatabase() {
     if (err) throw err;
     console.log('Using mydb database');
 
+    var sql;
     // Create the user table if it doesn't exist
-    const sql = 'CREATE TABLE IF NOT EXISTS users '
-              + '(id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255),'
-              + ' email VARCHAR(255), password VARCHAR(255), '
-              + 'email_verified BOOLEAN DEFAULT false, '
-              + 'register_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP);';
+    sql = `
+    CREATE TABLE IF NOT EXISTS users (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(255),
+      email VARCHAR(255),
+      password VARCHAR(255),
+      email_verified BOOLEAN DEFAULT false,
+      register_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      role VARCHAR(255) NOT NULL DEFAULT 'buyer'
+    )
+  `;
     connection.query(sql, (err) => {
       if (err) throw err;
       console.log('User table created or already exists');
     });
 
     // Create the email verification table if it doesn't exist
-    const sql2 = 'CREATE TABLE IF NOT EXISTS email_verification'
+   sql = 'CREATE TABLE IF NOT EXISTS email_verification'
                 + ' (id INT AUTO_INCREMENT PRIMARY KEY, email VARCHAR(255), '
                 + 'token VARCHAR(255), expiry_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP);';
-    connection.query(sql2, (err) => {
+    connection.query(sql, (err) => {
       if (err) throw err;
       console.log('Email verification table created or already exists');
     });
 
     // Create the remember me table if it doesn't exist
-    const sql3 = 'CREATE TABLE IF NOT EXISTS remember_me'
+    sql = 'CREATE TABLE IF NOT EXISTS remember_me'
               + '(id INT PRIMARY KEY AUTO_INCREMENT, email VARCHAR(255) NOT NULL,'
               + 'token VARCHAR(255) NOT NULL,expires DATETIME NOT NULL)';
-    connection.query(sql3, (err) => {
+    connection.query(sql, (err) => {
       if (err) throw err;
       console.log('remember_me table created or already exists');
     });
 
     // create password reset table
-    const sql4 = 'CREATE TABLE IF NOT EXISTS password_reset'
+    sql = 'CREATE TABLE IF NOT EXISTS password_reset'
               + '(id INT PRIMARY KEY AUTO_INCREMENT, email VARCHAR(255) NOT NULL,'
               + 'token VARCHAR(255) NOT NULL,expires DATETIME NOT NULL)';
-    connection.query(sql4, (err) => {
+    connection.query(sql, (err) => {
       if (err) throw err;
       console.log('password_reset table created or already exists');
+    });
+
+
+    sql = `
+    CREATE TABLE IF NOT EXISTS courses (
+      id INT NOT NULL AUTO_INCREMENT,
+      name VARCHAR(255) NOT NULL,
+      description TEXT NOT NULL,
+      price DECIMAL(10, 2) NOT NULL,
+      PRIMARY KEY (id)
+    )
+  `;
+    connection.query(sql, (err) => {
+      if (err) throw err;
+      console.log('courses table created or already exists');
+    });
+
+    sql = `
+    CREATE TABLE  IF NOT EXISTS lessons (
+      id INT NOT NULL AUTO_INCREMENT,
+      course_id INT NOT NULL,
+      name VARCHAR(255) NOT NULL,
+      description TEXT NOT NULL,
+      video_url VARCHAR(255) NOT NULL,
+      duration INT NOT NULL,
+      sequence INT NOT NULL,
+      is_free BOOLEAN NOT NULL DEFAULT false,
+      PRIMARY KEY (id),
+      FOREIGN KEY (course_id) REFERENCES courses(id)
+    )
+    `;
+    connection.query(sql, (err) => {
+      if (err) throw err;
+      console.log('lessons table created or already exists');
+    });
+   
+    sql = `
+      CREATE TABLE  IF NOT EXISTS user_courses (
+        id INT NOT NULL AUTO_INCREMENT,
+        user_id INT NOT NULL,
+        course_id INT NOT NULL,
+        PRIMARY KEY (id),
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        FOREIGN KEY (course_id) REFERENCES courses(id)
+      )
+    `;
+    connection.query(sql, (err) => {
+      if (err) throw err;
+      console.log('user_courses table created or already exists');
+    });
+
+
+
+
+    // create orders table
+    sql = "CREATE TABLE  IF NOT EXISTS orders ("
+      +"id INT NOT NULL AUTO_INCREMENT,"
+      +"user_id INT NOT NULL,"
+      +"course_id INT NOT NULL,"
+      +"order_date DATETIME NOT NULL,"
+      +"PRIMARY KEY (id),"
+      +"FOREIGN KEY (user_id) REFERENCES users(id),"
+      +"FOREIGN KEY (course_id) REFERENCES courses(id)"
+      +");";
+    connection.query(sql, (err) => {
+      if (err) throw err;
+      console.log('orders table created or already exists');
+    });
+
+
+
+    sql = `
+    CREATE TABLE  IF NOT EXISTS user_actions (
+      id INT NOT NULL AUTO_INCREMENT,
+      user_id INT NOT NULL,
+      action_type VARCHAR(255) NOT NULL,
+      action_date DATETIME NOT NULL,
+      PRIMARY KEY (id),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+    `;
+    connection.query(sql, (err) => {
+      if (err) throw err;
+      console.log('user_actions table created or already exists');
     });
 
     // Release the MySQL connection
@@ -306,7 +401,7 @@ function updateUserEmailVerified(email) {
 
 
 // 存储令牌
-function storeToken(email, token, expires) {
+function storeRememberMeToken(email, token, expires) {
   return new Promise((resolve, reject) => {
     // 将日期格式化为 MySQL DATETIME 格式
     const formattedDate = expires.toISOString().slice(0, 19).replace('T', ' ');
@@ -327,8 +422,37 @@ function storeToken(email, token, expires) {
   });
 }
 
+function getRememberMeTokenByEmail(email){
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'SELECT * FROM remember_me WHERE email = ?',
+      [email],
+      (error, results) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else if (results.length === 0) {
+          resolve(null);
+        } else if (results.length > 1) {
+          console.error('Duplicate token found in remember_me table');
+          resolve({
+            email: results[0].email,
+            token: results[0].token,
+            expires: new Date(results[0].expires)
+          });
+        } else {
+          resolve({
+            email: results[0].email,
+            token: results[0].token,
+            expires: new Date(results[0].expires)
+          });
+        }
+      }
+    );
+  });
+}
 
-function getUserByToken(token) {
+function getUserByRememberMeToken(token) {
   return new Promise((resolve, reject) => {
     pool.query(
       'SELECT * FROM remember_me WHERE token = ?',
@@ -356,7 +480,9 @@ function getUserByToken(token) {
   });
 }
 
-function updateTokenexpires(token) {
+
+
+function updateRememberMeTokenexpires(token) {
   return new Promise((resolve, reject) => {
     // 将日期格式化为 MySQL DATETIME 格式
     const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
@@ -472,6 +598,23 @@ function deletePasswordResetToken(email) {
   });
 }
 
+function logUserAction(user_id, action_type) {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'INSERT INTO user_actions (user_id, action_type, action_date) VALUES (?, ?, NOW())',
+      [user_id, action_type],
+      (error, results) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else {
+          resolve();
+        }
+      }
+    );
+  });
+}
+
 
 function timeout_delete_remember_me() {
   return new Promise((resolve, reject) => {
@@ -505,7 +648,7 @@ function timeout_delete_email_verification() {
   });
 }
 
-
+// todo: cousers and lessions table and user_courses table functions.
 
 module.exports = {
   initializeDatabase,
@@ -517,13 +660,15 @@ module.exports = {
   getVerificationToken,
   deleteVerificationToken,
   updateUserEmailVerified,
-  storeToken,
-  getUserByToken,
-  updateTokenexpires,
+  storeRememberMeToken,
+  getRememberMeTokenByEmail,
+  getUserByRememberMeToken,
+  updateRememberMeTokenexpires,
   storePasswordResetToken,
   getPasswordResetToken,
   updateUserPassword,
   deletePasswordResetToken,
+  logUserAction,
   timeout_delete_remember_me,
   timeout_delete_email_verification
 };

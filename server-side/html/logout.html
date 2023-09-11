@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Logout</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f1f1f1;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+            margin-top: 50px;
+        }
+        h1 {
+            margin-top: 0;
+        }
+        p {
+            margin-bottom: 0;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #333;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Logout</h1>
+        <p>Are you sure you want to logout?</p>
+        <form id="logout-form"  method="post" onsubmit="return validateForm()">
+            <button type="button" id="logout-button">Yes, Logout</button>
+        </form>
+    </div>
+    
+<script>
+    const logoutButton = document.getElementById("logout-button");
+    logoutButton.addEventListener("click", function() {
+        alert("logoutButton.addEventListener() called");
+        const email = getCookie("email");
+        if (!email) {
+            alert("You are not logged in!");
+            window.location.href = "/login";
+            return;
+        }else{
+            alert("You are logged in as " + email);
+        }
+    
+        logout(email);
+    });
+
+    function logout(email) {
+        alert("logout() called, email: " + email);
+        const data = {
+            "email": email
+        };
+
+        fetch("/logout", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({data})
+        })
+
+
+        window.location.href = "/login";
+        return;
+    }
+
+    function getCookie(name) {
+        const cookies = document.cookie.split(";");
+
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+
+            if (cookie.startsWith(name + "=")) {
+            return cookie.substring(name.length + 1);
+            }
+        }
+        return null;
+    }
+
+    function validateForm(){
+        alert("validateForm() called");
+        return;
+    }
+
+    function logoutOtherLogins(username) {
+        const sessions = Object.values(sessionStorage);
+
+        sessions.forEach(session => {
+            if (session.username === username) {
+                sessionStorage.removeItem(session.key);
+            }
+        });
+    }
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,43 @@
+<div id="image-grid"></div>
+
+<script>
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', 'b.json');
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            try {
+                var images = JSON.parse(xhr.responseText);
+                var imageGrid = document.getElementById('image-grid');
+                if (imageGrid) {
+                    for (var date in images) {
+                        var image = images[date];
+                        var img = document.createElement('img');
+                        img.src = image.url;
+                        img.onclick = function() {
+                            showImage(image.url);
+                        };
+                        imageGrid.appendChild(img);
+                    }
+                } else {
+                    console.log('Error: imageGrid is null or undefined');
+                }
+            } catch (e) {
+                console.log('Error parsing JSON: ' + e);
+            }
+        } else {
+            console.log('Request failed.  Returned status of ' + xhr.status);
+        }
+    };
+    xhr.send();
+
+    function showImage(imageUrl) {
+        var largeImage = document.getElementById('large-image');
+        largeImage.src = imageUrl;
+        largeImage.style.display = 'block';
+    }
+
+    function hideImage() {
+        var largeImage = document.getElementById('large-image');
+        largeImage.style.display = 'none';
+    }
+</script>

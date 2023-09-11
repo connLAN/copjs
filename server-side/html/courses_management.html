@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Course Management</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        font-size: 16px;
+        line-height: 1.5;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Course Management</h1>
+    <img src="th1.jpg" alt="screen pic 1">
+
+    <h2>Create a Course</h2>
+    <form method="POST" action="/courses">
+      <label for="name">Name:</label>
+      <input type="text" id="name" name="name" required>
+
+      <label for="description">Description:</label>
+      <textarea id="description" name="description" required></textarea>
+
+      <button type="submit">Create Course</button>
+    </form>
+
+    <h2>View Courses</h2>
+    <ul>
+      <% courses.forEach(function(course) { %>
+        <li>
+          <a href="/courses/<%= course.id %>"><%= course.name %></a>
+          <form method="POST" action="/courses/<%= course.id %>?_method=DELETE">
+            <button type="submit">Delete</button>
+          </form>
+        </li>
+      <% }); %>
+    </ul>
+
+    <h2>Edit Course</h2>
+    <form method="POST" action="/courses/<%= course.id %>?_method=PUT">
+      <label for="name">Name:</label>
+      <input type="text" id="name" name="name" value="<%= course.name %>" required>
+
+      <label for="description">Description:</label>
+      <textarea id="description" name="description" required><%= course.description %></textarea>
+
+      <button type="submit">Update Course</button>
+    </form>
+  </body>
+</html>

@@ -1,9 +1,10 @@
-const path = require('path');
 const express = require('express');
-// const morgan = require('morgan');
 const mysql = require('mysql2/promise');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
+const RedisStore = require('connect-redis').default;
+const path = require('path');
+
 
 const crypto = require('crypto');
 // const fs = require('fs');
@@ -30,6 +31,34 @@ const config = appConfig;
 const app = express();
 serveStaticDirectories(app);
 
+
+/*
+const {
+  redis,
+  redisClient,
+  getSessionId,
+  storeSessionId,
+  checkSession
+} = require(path.join(routerPath + '/session'));
+
+async function setupSession(app) {
+
+  await new Promise((resolve, reject) => {
+    redisClient.on('error', reject);
+    redisClient.on('ready', resolve);
+    console.log('redisClient ready');
+  });
+
+  app.use(session({
+    secret: config.session.secret,
+    resave: false,
+    saveUninitialized: true,
+    store: new RedisStore({ client: redisClient })
+  }));
+}
+setupSession(app);
+*/
+
 // Parse JSON and URL-encoded query parameters
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -40,16 +69,17 @@ app.use(bodyParser.json());
 
 function sessionHandler(app, config) {
   app.use(session({
-    secret: config.session.secret,  
+    secret: config.session.secret,
     resave: false,
-    saveUninitialized: true
+    saveUninitialized: true,
+    cookie: { secure: true, maxAge: config.session.session_timeout_in_seconds }
   }));
 }
 sessionHandler(app, config);
 
-// // write access log
-// accessLogger = require('./router/common');
-// app.use(accessLogger);
+// write access log
+accessLogger = require('./router/common');
+app.use(accessLogger);
 
 // Connect to the MySQL server and create the "mydb" database and users table
 // call database.js
@@ -60,7 +90,8 @@ db.initializeDatabase();
 
 
 mainRouter = require(path.join(routerPath + '/main_router'));
-app.use(mainRouter.checkAuthentication);   // cover all methods, including GET, POST, PUT, DELETE, etc.
+app.use(mainRouter.checkAuthentication); 
+// cover all methods, including GET, POST, PUT, DELETE, etc.
 
 const registerRouter = require('./router/register');
 app.post('/register', registerRouter.registerHandler);
@@ -84,6 +115,17 @@ app.post('/reset_password000', resetPasswordHandler);
 
 app.use(mainRouter.htmlRouter);
 app.use(mainRouter.notFoundHandler);
+
+const { 
+  logoutOtherLogins,
+  logoutHandler
+  } 
+   = require(path.join(routerPath + '/logout'));
+
+app.post('/logout', (req, res) => {
+  logoutHandler(req, res);
+});
+
 
 require('./router/cron');
 

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background-image: url("snow.jpg");
+      background-size: cover;
+      background-position: top left;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #333;
+      color: #fff;
+      padding: 10px;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+    .settings-menu {
+      position: relative;
+      display: inline-block;
+    }
+    .settings-menu-content {
+      display: none;
+      position: absolute;
+      z-index: 1;
+      top: 100%;
+      right: 0;
+      background-color: #f9f9f9;
+      min-width: 160px;
+      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      padding: 12px 16px;
+    }
+    .settings-menu:hover .settings-menu-content {
+      display: block;
+    }
+    .settings-menu-content a {
+      display: block;
+      padding: 5px 0;
+      text-decoration: none;
+      color: #333;
+    }
+    .settings-menu-content a:hover {
+      background-color: #ddd;
+    }
+    .tabs {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #f1f1f1;
+      padding: 10px;
+    }
+    .tab {
+      padding: 10px;
+      cursor: pointer;
+    }
+    .tab.active {
+      background-color: #ddd;
+    }
+    .tab-content {
+      display: none;
+      padding: 10px;
+    }
+    .tab-content.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Dashboard</h1>
+    <div class="settings-menu">
+      <button>Settings</button>
+      <div class="settings-menu-content">
+        <a href="#">Profile</a>
+        <a href="#">Logout</a>
+      </div>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" data-tab="courses">Courses</div>
+    <div class="tab" data-tab="order">Order</div>
+    <div class="tab" data-tab="learning">learning</div>
+  </div>
+  <div class="tab-content active" data-tab="courses">
+    <h2>Loading courses content...</h2>
+  </div>
+  <div class="tab-content" data-tab="order">
+    <h2>Order</h2>
+    <h2>Loading Order content...</h2>
+  </div>
+  <div class="tab-content" data-tab="learning">
+    <h2>learning</h2>
+    <h2>Loading learning content...</h2>
+  </div>
+  <script>
+    const tabs = document.querySelectorAll(".tab");
+    const tabContents = document.querySelectorAll(".tab-content");
+
+    // Add click event listener to tabs
+    tabs.forEach(tab => {
+      tab.addEventListener("click", () => {
+        // alert("tab is clicked");
+        const tabName = tab.dataset.tab;
+
+        // alert('tabName: ' + tabName);
+        tabs.forEach(tab => tab.classList.remove("active"));
+        tab.classList.add("active");
+
+        // alert('tabName 111: ' + tabName);       
+        tabContents.forEach(tabContent => {
+          // alert('tabName 222: ' + tabName + ' tabContent.dataset.tab: ' + tabContent.dataset.tab);       
+
+          if (tabContent.dataset.tab === tabName) {
+            // alert("tabContent.dataset.tab === tabName: " + tabContent.dataset.tab + " " + tabName);
+            tabContent.classList.add("active");
+
+            if (tabName === "courses" ) {
+              // alert("courses");
+              fetch("/courses")
+                .then(response => response.text())
+                .then(data => {
+                  tabContent.innerHTML = data;
+                })
+                .catch(error => {
+                  console.error(error);
+                  tabContent.innerHTML = "<h2>Error loading courses content</h2>";
+                });
+            }
+          } else if(tabName === "order" ){
+            // alert("order");
+            fetch("/order")
+                .then(response => response.text())
+                .then(data => {
+                  tabContent.innerHTML = data;
+                })
+                .catch(error => {
+                  console.error(error);
+                  tabContent.innerHTML = "<h2>Error loading order content</h2>";
+                });
+          } else if(tabName === "learning" ){
+            // alert("learning");
+            fetch("/learning")
+                .then(response => response.text())
+                .then(data => {
+                  tabContent.innerHTML = data;
+                })
+                .catch(error => {
+                  console.error(error);
+                  tabContent.innerHTML = "<h2>Error loading learning content</h2>";
+                });
+          } else {
+            tabContent.classList.remove("active");
+          }
+        });
+      });
+    });
+
+    // Load default tab content
+    const defaultTab = document.querySelector(".tab.active");
+    const defaultTabName = defaultTab.dataset.tab;
+    const defaultTabContent = document.querySelector(`.tab-content[data-tab="${defaultTabName}"]`);
+
+    if (defaultTabName === "courses") {
+      fetch("/courses")
+        .then(response => response.text())
+        .then(data => {
+          defaultTabContent.innerHTML = data;
+        })
+        .catch(error => {
+          console.error(error);
+          defaultTabContent.innerHTML = "<h2>Error loading courses content</h2>";
+        });
+    }
+
+  </script>
+</body>
+</html>

@@ -1,378 +1,140 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <script>
-      const xhr = new XMLHttpRequest();
-      xhr.open('GET', '/api/data');
-      xhr.withCredentials = true; // Send cookies with the request
-      xhr.onload = () => {
-        if (xhr.status === 200) {
-          console.log(xhr.responseText);
-        } else {
-          console.error('Request failed');
-        }
-      };
-      xhr.send();
-    </script>
-
-    <title>DASH BOARD</title>
-    <style>
-      body {
-        background-image: url('snow.jpg');
-        background-repeat: no-repeat;
-        background-position: center center;
-        background-size: cover;
-      }
-
-      @media (max-width: 768px) {
-        body {
-          background-size: contain;
-        }
-      }
-
-      .navbar {
-        background-color: #333;
-        overflow: hidden;
-      }
-
-      .notifications {
-        margin-top: 20px;
-        padding: 10px;
-        background-color: #f2f2f2;
-        border-radius: 5px;
-      }
-
-      .notifications h2 {
-        font-size: 18px;
-        margin-bottom: 10px;
-      }
-
-      .notifications ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-      }
-
-      .notifications li {
-        margin-bottom: 5px;
-      }
-
-      .notifications li a {
-        color: #333;
-        text-decoration: none;
-      }
-
-      .notifications li a:hover {
-        text-decoration: underline;
-      }
-
-      .search-bar {
-        margin-top: 20px;
-        padding: 10px;
-        background-color: #f2f2f2;
-        border-radius: 5px;
-      }
-
-      .search-bar input[type="text"] {
-        width: 100%;
-        padding: 10px;
-        border: none;
-        border-radius: 5px;
-        margin-bottom: 10px;
-      }
-
-      .widget {
-        margin-top: 20px;
-        padding: 10px;
-        background-color: #f2f2f2;
-        border-radius: 5px;
-      }
-
-      .widget h2 {
-        font-size: 18px;
-        margin-bottom: 10px;
-      }
-
-      .widget ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-      }
-
-      .widget li {
-        margin-bottom: 5px;
-      }
-
-      .widget li a {
-        color: #333;
-        text-decoration: none;
-      }
-
-      .widget li a:hover {
-        text-decoration: underline;
-      }
-
-      .calendar {
-        margin-top: 20px;
-        padding: 10px;
-        background-color: #f2f2f2;
-        border-radius: 5px;
-      }
-
-      .calendar h2 {
-        font-size: 18px;
-        margin-bottom: 10px;
-      }
-
-      .calendar table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-
-      .calendar th,
-      .calendar td {
-        padding: 5px;
-        text-align: center;
-        border: 1px solid #ccc;
-      }
-
-      .calendar th {
-        background-color: #333;
-        color: #fff;
-      }
-
-      .calendar td.today {
-        background-color: #f2f2f2;
-      }
-
-      .task-manager {
-        margin-top: 20px;
-        padding: 10px;
-        background-color: #f2f2f2;
-        border-radius: 5px;
-      }
-
-      .task-manager h2 {
-        font-size: 18px;
-        margin-bottom: 10px;
-      }
-
-      .task-manager ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-      }
-
-      .task-manager li {
-        margin-bottom: 5px;
-      }
-
-      .task-manager li label {
-        display: inline-block;
-        width: 100px;
-      }
-
-      .task-manager li input[type="text"] {
-        width: calc(100% - 100px);
-        padding: 5px;
-        border: none;
-        border-radius: 5px;
-      }
-
-      .task-manager li input[type="checkbox"] {
-        margin-right: 10px;
-      }
-
-      .chat {
-        margin-top: 20px;
-        padding: 10px;
-        background-color: #f2f2f2;
-        border-radius: 5px;
-      }
-
-      .chat h2 {
-        font-size: 18px;
-        margin-bottom: 10px;
-      }
-
-      .chat ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-      }
-
-      .chat li {
-        margin-bottom: 5px;
-      }
-
-      .chat li strong {
-        display: block;
-        margin-bottom: 5px;
-      }
-
-      .chat li span {
-        display: block;
-        margin-left: 20px;
-      }
-
-      .chat-form {
-        margin-top: 10px;
-      }
-
-      .chat-form input[type="text"] {
-        width: calc(100% - 80px);
-        padding: 5px;
-        border: none;
-        border-radius: 5px;
-      }
-
-      .chat-form input[type="submit"] {
-        width: 80px;
-        padding: 5px;
-        border: none;
-        border-radius: 5px;
-        background-color: #333;
-        color: #fff;
-        cursor: pointer;
-      }
-
-      .chat-form input[type="submit"]:hover {
-        background-color: #444;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="navbar">
-      <a href="#">Home</a>
-      <a href="#">Dashboard</a>
-      <a href="#">Settings</a>
-      <a href="#">Logout</a>
+<head>
+  <title>Dashboard</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background-size: cover;
+      background-position: top left;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #333;
+      color: #fff;
+      padding: 10px;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+    .settings-menu {
+      position: relative;
+      display: inline-block;
+    }
+    .settings-menu-content {
+      display: none;
+      position: absolute;
+      z-index: 1;
+      top: 100%;
+      right: 0;
+      background-color: #f9f9f9;
+      min-width: 160px;
+      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      padding: 12px 16px;
+    }
+    .settings-menu:hover .settings-menu-content {
+      display: block;
+    }
+    .settings-menu-content a {
+      display: block;
+      padding: 5px 0;
+      text-decoration: none;
+      color: #333;
+    }
+    .settings-menu-content a:hover {
+      background-color: #ddd;
+    }
+    .tabs {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #f1f1f1;
+      padding: 10px;
+    }
+    .tab {
+      padding: 10px;
+      cursor: pointer;
+    }
+    .tab.active {
+      background-color: #ddd;
+    }
+    .tab-content {
+      display: none;
+      padding: 10px;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .tab-iframe {
+      width: 100%;
+      height: calc(100vh + 50px);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Dashboard</h1>
+    <div class="settings-menu">
+      <button>Settings</button>
+      <div class="settings-menu-content">
+        <a href="#">Profile</a>
+        <a href="#">Logout</a>
+      </div>
     </div>
+  </div>
 
-    <div class="notifications">
-      <h2>Recent Activity</h2>
-      <ul>
-        <li><a href="#">New message from John Doe</a></li>
-        <li><a href="#">Comment on document "Project Proposal"</a></li>
-        <li><a href="#">Updated shared document "Meeting Notes"</a></li>
-      </ul>
-    </div>
+  <div class="tabs">
+    <div class="tab active" data-tab="courses">Courses</div>
+    <div class="tab" data-tab="order">Order</div>
+    <div class="tab" data-tab="learning">learning</div>
+  </div>
 
-    <div class="search-bar">
-      <input type="text" placeholder="Search...">
-    </div>
+  <div class="tab-content active" data-tab="courses">
+    <iframe class="tab-iframe" src="/courses" ></iframe>
+  </div>
+  <div class="tab-content" data-tab="order">
+    <iframe class="tab-iframe" src="/order"></iframe>
+  </div>
+  <div class="tab-content" data-tab="learning">
+    <iframe class="tab-iframe" src="/learning"></iframe>
+  </div>
 
-    <div class="widget">
-      <h2>My Widgets</h2>
-      <ul>
-        <li><a href="#">Weather Forecast</a></li>
-        <li><a href="#">News Headlines</a></li>
-        <li><a href="#">Social Media Feed</a></li>
-      </ul>
-    </div>
+  <script>
+    const tabs = document.querySelectorAll(".tab");
+    const tabContents = document.querySelectorAll(".tab-content");
 
-    <div class="calendar">
-      <h2>Upcoming Events</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Sun</th>
-            <th>Mon</th>
-            <th>Tue</th>
-            <th>Wed</th>
-            <th>Thu</th>
-            <th>Fri</th>
-            <th>Sat</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td>1</td>
-            <td>2</td>
-          </tr>
-          <tr>
-            <td>3</td>
-            <td>4</td>
-            <td>5</td>
-            <td>6</td>
-            <td>7</td>
-            <td>8</td>
-            <td>9</td>
-          </tr>
-          <tr>
-            <td>10</td>
-            <td>11</td>
-            <td>12</td>
-            <td>13</td>
-            <td>14</td>
-            <td>15</td>
-            <td>16</td>
-          </tr>
-          <tr>
-            <td>17</td>
-            <td>18</td>
-            <td>19</td>
-            <td>20</td>
-            <td>21</td>
-            <td>22</td>
-            <td>23</td>
-          </tr>
-          <tr>
-            <td>24</td>
-            <td>25</td>
-            <td>26</td>
-            <td>27</td>
-            <td>28</td>
-            <td>29</td>
-            <td>30</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    // Add click event listener to tabs
+    tabs.forEach(tab => {
+      tab.addEventListener("click", () => {
+        const tabName = tab.dataset.tab;
 
-    <div class="task-manager">
-      <h2>My Tasks</h2>
-      <ul>
-        <li>
-          <label><input type="checkbox">Task 1</label>
-          <input type="text" placeholder="Due date...">
-        </li>
-        <li>
-          <label><input type="checkbox">Task 2</label>
-          <input type="text" placeholder="Due date...">
-        </li>
-        <li>
-          <label><input type="checkbox">Task 3</label>
-          <input type="text" placeholder="Due date...">
-        </li>
-      </ul>
-    </div>
+        tabs.forEach(tab => tab.classList.remove("active"));
+        tab.classList.add("active");
 
-    <div class="chat">
-      <h2>Chat</h2>
-      <ul>
-        <li>
-          <strong>John Doe</strong>
-          <span>Hello, how are you?</span>
-        </li>
-        <li>
-          <strong>Jane Smith</strong>
-          <span>Doing well, thanks. How about you?</span>
-        </li>
-        <li>
-          <strong>John Doe</strong>
-          <span>Not bad. Have you finished the project yet?</span>
-        </li>
-      </ul>
-      <form class="chat-form">
-        <input type="text" placeholder="Type your message...">
-        <input type="submit" value="Send">
-      </form>
-    </div>
-  </body>
+        tabContents.forEach(tabContent => {
+          if (tabContent.dataset.tab === tabName) {
+            tabContent.classList.add("active");
+
+            const iframe = tabContent.querySelector(".tab-iframe");
+            if (tabName === "courses") {
+              iframe.src = "/courses";
+            }else if(tabName === "order"){
+              iframe.src = "/order";
+            }else if(tabName === "learning"){
+              iframe.src = "/learning";
+            }
+            
+          } else {
+            tabContent.classList.remove("active");
+          }
+        });
+      });
+    });
+  </script>
+</body>
 </html>

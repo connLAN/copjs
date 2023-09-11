@@ -219,7 +219,7 @@
           return;
         }
         
-        const rememberMe = rememberMeCheckbox.checked;
+        const RememberMe = rememberMeCheckbox.checked;
 
         // Validate the form inputs
         if (emailInput.validity.valid && passwordInput.validity.valid) {
@@ -227,7 +227,7 @@
           const user = {
             email: emailInput.value,
             password: passwordInput.value,
-            rememberMe: rememberMe
+            isRememberMe: RememberMe
           };
 
           // Send a POST request to the server to login the user
