@@ -31,34 +31,6 @@ const config = appConfig;
 const app = express();
 serveStaticDirectories(app);
 
-
-/*
-const {
-  redis,
-  redisClient,
-  getSessionId,
-  storeSessionId,
-  checkSession
-} = require(path.join(routerPath + '/session'));
-
-async function setupSession(app) {
-
-  await new Promise((resolve, reject) => {
-    redisClient.on('error', reject);
-    redisClient.on('ready', resolve);
-    console.log('redisClient ready');
-  });
-
-  app.use(session({
-    secret: config.session.secret,
-    resave: false,
-    saveUninitialized: true,
-    store: new RedisStore({ client: redisClient })
-  }));
-}
-setupSession(app);
-*/
-
 // Parse JSON and URL-encoded query parameters
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -70,16 +42,16 @@ app.use(bodyParser.json());
 function sessionHandler(app, config) {
   app.use(session({
     secret: config.session.secret,
-    resave: false,
+    resave: true,
     saveUninitialized: true,
     cookie: { secure: true, maxAge: config.session.session_timeout_in_seconds }
   }));
 }
 sessionHandler(app, config);
 
-// write access log
-accessLogger = require('./router/common');
-app.use(accessLogger);
+// // write access log
+// accessLogger = require('./router/common');
+// app.use(accessLogger);
 
 // Connect to the MySQL server and create the "mydb" database and users table
 // call database.js

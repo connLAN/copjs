@@ -81,13 +81,13 @@ function initializeDatabase() {
       console.log('Email verification table created or already exists');
     });
 
-    // Create the remember me table if it doesn't exist
-    sql = 'CREATE TABLE IF NOT EXISTS remember_me'
+    // Create the rememberMe table if it doesn't exist
+    sql = 'CREATE TABLE IF NOT EXISTS rememberMe'
               + '(id INT PRIMARY KEY AUTO_INCREMENT, email VARCHAR(255) NOT NULL,'
               + 'token VARCHAR(255) NOT NULL,expires DATETIME NOT NULL)';
     connection.query(sql, (err) => {
       if (err) throw err;
-      console.log('remember_me table created or already exists');
+      console.log('rememberMe table created or already exists');
     });
 
     // create password reset table
@@ -106,6 +106,9 @@ function initializeDatabase() {
       name VARCHAR(255) NOT NULL,
       description TEXT NOT NULL,
       price DECIMAL(10, 2) NOT NULL,
+      status VARCHAR(20) NOT NULL,
+      author VARCHAR(255) NOT NULL,
+      timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (id)
     )
   `;
@@ -115,7 +118,7 @@ function initializeDatabase() {
     });
 
     sql = `
-    CREATE TABLE  IF NOT EXISTS lessons (
+    CREATE TABLE IF NOT EXISTS lessons (
       id INT NOT NULL AUTO_INCREMENT,
       course_id INT NOT NULL,
       name VARCHAR(255) NOT NULL,
@@ -124,6 +127,10 @@ function initializeDatabase() {
       duration INT NOT NULL,
       sequence INT NOT NULL,
       is_free BOOLEAN NOT NULL DEFAULT false,
+      pic_url VARCHAR(255) NOT NULL,
+      status VARCHAR(20) NOT NULL,
+      author VARCHAR(255) NOT NULL,
+      timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (id),
       FOREIGN KEY (course_id) REFERENCES courses(id)
     )
@@ -288,6 +295,41 @@ function getUserByName(name) {
   });
 }
 
+function getUserByToken(token) {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'SELECT * FROM rememberMe WHERE token = ?',
+      [token],
+      (error, results) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else if (results.length === 0) {
+          console.log('getUserByToken: results.length === 0\n' + token);
+          resolve(null);
+        } else if (results.length > 1) {
+          console.error('Duplicate token found in users table');
+          resolve({
+            id: results[0].id,
+            email: results[0].email,
+            token: results[0].token,
+            expires: new Date(results[0].expires)
+          });
+        } else { // normal case
+          console.log('getUserByToken: results.length === 1');
+          resolve({
+            id: results[0].id,
+            email: results[0].email,
+            token: results[0].token,
+            expires: new Date(results[0].expires)
+          });
+        }
+      }
+    );
+  });
+}
+
+
 function isEmailVerified(email) {
   return new Promise((resolve, reject) => {
     pool.query(
@@ -399,33 +441,31 @@ function updateUserEmailVerified(email) {
 }
 
 
-
-// 存储令牌
 function storeRememberMeToken(email, token, expires) {
   return new Promise((resolve, reject) => {
-    // 将日期格式化为 MySQL DATETIME 格式
-    const formattedDate = expires.toISOString().slice(0, 19).replace('T', ' ');
+    if (!(expires instanceof Date && !isNaN(expires))) {
+      reject(new Error('Invalid expires parameter'));
+      return;
+    }
 
-    // 执行 SQL 查询
-    pool.query(
-      'INSERT INTO remember_me(email, token, expires) VALUES (?, ?, ?)',
-      [email, token, formattedDate],
-      (error, results) => {
-        if (error) {
-          console.error(error);
-          reject(error);
-        } else {
-          resolve(results);
-        }
+    const expiresString = expires.toISOString().slice(0, 19).replace('T', ' ');
+    const query = 'INSERT INTO rememberMe (email, token, expires) VALUES (?, ?, ?)';
+    const params = [email, token, expiresString];
+    pool.query(query, params, (error, results, fields) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve();
       }
-    );
+    });
   });
 }
+
 
 function getRememberMeTokenByEmail(email){
   return new Promise((resolve, reject) => {
     pool.query(
-      'SELECT * FROM remember_me WHERE email = ?',
+      'SELECT * FROM rememberMe WHERE email = ?',
       [email],
       (error, results) => {
         if (error) {
@@ -434,7 +474,7 @@ function getRememberMeTokenByEmail(email){
         } else if (results.length === 0) {
           resolve(null);
         } else if (results.length > 1) {
-          console.error('Duplicate token found in remember_me table');
+          console.error('Duplicate token found in rememberMe table');
           resolve({
             email: results[0].email,
             token: results[0].token,
@@ -452,10 +492,24 @@ function getRememberMeTokenByEmail(email){
   });
 }
 
+function getRememberMeTokenByEmailToken(email, token) {
+  return new Promise((resolve, reject) => {
+    const query = 'SELECT * FROM rememberMe WHERE email = ? AND token = ?';
+    const params = [email, token];
+    pool.query(query, params, (error, results, fields) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(results[0]);
+      }
+    });
+  });
+}
+
 function getUserByRememberMeToken(token) {
   return new Promise((resolve, reject) => {
     pool.query(
-      'SELECT * FROM remember_me WHERE token = ?',
+      'SELECT * FROM rememberMe WHERE token = ?',
       [token],
       (error, results) => {
         if (error) {
@@ -464,7 +518,7 @@ function getUserByRememberMeToken(token) {
         } else if (results.length === 0) {
           resolve(null);
         } else if (results.length > 1) {
-          console.error('Duplicate token found in remember_me table');
+          console.error('Duplicate token found in rememberMe table');
           resolve({
             email: results[0].email,
             expires: new Date(results[0].expires)
@@ -480,17 +534,35 @@ function getUserByRememberMeToken(token) {
   });
 }
 
+function deleteRememberMeTokenByEmailToken(email, token) {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'DELETE FROM rememberMe WHERE email = ? AND token = ?',
+      [email,token],
+      (error, results) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else {
+          resolve();
+        }
+      }
+    );
+  });
+}
 
 
-function updateRememberMeTokenexpires(token) {
+
+
+function updateRememberMeTokenExpires(email,token) {
   return new Promise((resolve, reject) => {
     // 将日期格式化为 MySQL DATETIME 格式
     const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
     const formattedDate = expires.toISOString().slice(0, 19).replace('T', ' ');
 
     pool.query(
-      'UPDATE remember_me SET expires = ? WHERE token = ?',
-      [formattedDate, token],
+      'UPDATE rememberMe SET expires = ? WHERE token = ? AND email = ?',
+      [formattedDate, token, email],
       (error, results) => {
         if (error) {
           console.error(error);
@@ -619,7 +691,7 @@ function logUserAction(user_id, action_type) {
 function timeout_delete_remember_me() {
   return new Promise((resolve, reject) => {
     pool.query(
-      'DELETE FROM remember_me WHERE expires < NOW()',
+      'DELETE FROM rememberMe WHERE expires < NOW()',
       (error, results) => {
         if (error) {
           console.error(error);
@@ -648,13 +720,466 @@ function timeout_delete_email_verification() {
   });
 }
 
-// todo: cousers and lessions table and user_courses table functions.
+// todo: courses and lessions table and user_courses table functions.
+
+function addCourses(name, description, price) {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'INSERT INTO courses (name, description, price) VALUES (?, ?, ?)',
+      [name, description, price],
+      (error, results, fields) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else {
+          resolve(results);
+        }
+      }
+    );
+  });
+}
+
+
+function coursesList() {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'SELECT * FROM courses',
+      (error, results) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else {
+          resolve(results);
+        }
+      }
+    );
+  });
+} 
+
+function getCourseById(id) {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'SELECT * FROM courses WHERE id = ?',
+      [id],
+      (error, results) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else if (results.length === 0) {
+          resolve(null);
+        } else if (results.length > 1) {
+          console.error('Duplicate id found in courses table');
+          resolve({
+            id: results[0].id,
+            name: results[0].name,
+            description: results[0].description,
+            price: results[0].price
+          });
+        } else { // normal case
+          resolve({
+            id: results[0].id,
+            name: results[0].name,
+            description: results[0].description,
+            price: results[0].price
+          });
+        }
+      }
+    );
+  });
+}
+
+function coursesUpdate(id, name, description, price) {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'UPDATE courses SET name = ?, description = ?, price = ? WHERE id = ?',
+      [name, description, price, id],
+      (error, results) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else {
+          resolve();
+        }
+      }
+    );
+  });
+} 
+
+function coursesDelete(id) {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'DELETE FROM courses WHERE id = ?',
+      [id],
+      (error, results) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else {
+          resolve();
+        }
+      }
+    );
+  });
+}
+
+function addLessons(course_id, name, description, video_url, duration, sequence, is_free) {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'INSERT INTO lessons (course_id, name, description, video_url, duration, sequence, is_free) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [course_id, name, description, video_url, duration, sequence, is_free],
+      (error, results, fields) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else {
+          resolve(results);
+        }
+      }
+    );
+  });
+}
+
+function lessonsList(course_id) {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'SELECT * FROM lessons WHERE course_id = ?',
+      [course_id],
+      (error, results) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else {
+          resolve(results);
+        }
+      }
+    );
+  });
+}
+
+
+function getLessonById(id) {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'SELECT * FROM lessons WHERE id = ?',
+      [id],
+      (error, results) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else if (results.length === 0) {
+          resolve(null);
+        } else if (results.length > 1) {
+          console.error('Duplicate id found in lessons table');
+          resolve({
+            id: results[0].id,
+            course_id: results[0].course_id,
+            name: results[0].name,
+            description: results[0].description,
+            video_url: results[0].video_url,
+            duration: results[0].duration,
+            sequence: results[0].sequence,
+            is_free: results[0].is_free
+          });
+
+        } else { // normal case
+          resolve({
+            id: results[0].id,
+            course_id: results[0].course_id,
+            name: results[0].name,
+            description: results[0].description,
+            video_url: results[0].video_url,
+            duration: results[0].duration,
+            sequence: results[0].sequence,
+            is_free: results[0].is_free
+          });
+
+        }
+      } 
+    );
+  });
+}
+
+function lessonsUpdate(id, course_id, name, description, video_url, duration, sequence, is_free) {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'UPDATE lessons SET course_id = ?, name = ?, description = ?, video_url = ?, duration = ?, sequence = ?, is_free = ? WHERE id = ?',
+      [course_id, name, description, video_url, duration, sequence, is_free, id],
+      (error, results) => {
+        if (error) {
+
+          console.error(error);
+          reject(error);
+        } else {
+          resolve();
+        }
+      }
+    );
+  });
+}
+
+function lessonsDelete(id) {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'DELETE FROM lessons WHERE id = ?',
+      [id],
+      (error, results) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else {
+          resolve();
+        }
+      }
+    );
+  });
+}
+
+
+function addOrder(user_id, course_id) {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'INSERT INTO orders (user_id, course_id, order_date) VALUES (?, ?, NOW())',
+      [user_id, course_id],
+      (error, results, fields) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else {
+          resolve(results);
+        }
+      }
+    );
+  });
+
+}
+
+function ordersList(user_id) {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'SELECT * FROM orders WHERE user_id = ?',
+      [user_id],
+      (error, results) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else {
+          console.log('ordersList: results = ' + JSON.stringify(results));
+          resolve(results);
+        }
+      }
+    );
+
+  });
+}
+
+function ordersListByCourseId(course_id) {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'SELECT * FROM orders WHERE course_id = ?',
+      [course_id],
+      (error, results) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else {
+          console.log('ordersListByCourseId: results = ' + JSON.stringify(results));
+          resolve(results);
+        }
+      }
+    );
+
+  });
+}
+
+function ordersListByUserIdAndCourseId(user_id, course_id) {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'SELECT * FROM orders WHERE user_id = ? AND course_id = ?',
+      [user_id, course_id],
+      (error, results) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else {
+          console.log('ordersListByUserIdAndCourseId: results = ' + JSON.stringify(results));
+          resolve(results);
+        }
+      }
+    );
+
+  });
+}
+
+function ordersDelete(id) {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'DELETE FROM orders WHERE id = ?',
+      [id],
+      (error, results) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else {
+          console.log('ordersDelete: results = ' + JSON.stringify(results));
+          resolve();
+        }
+      }
+    );
+  });
+}
+
+function addCourseToUser(user_id, course_id) {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'INSERT INTO user_courses (user_id, course_id) VALUES (?, ?)',
+      [user_id, course_id],
+      (error, results, fields) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else {
+          console.log('addCourseToUser: results = ' + JSON.stringify(results));
+          resolve(results);
+        }
+      }
+    );
+  });
+}
+
+function userCoursesList(user_id) {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'SELECT * FROM user_courses WHERE user_id = ?',
+      [user_id],
+      (error, results) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else {
+          console.log('userCoursesList: results = ' + JSON.stringify(results));
+          resolve(results);
+        }
+      }
+    );
+  });
+}
+
+function userCoursesListByCourseId(course_id) {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'SELECT * FROM user_courses WHERE course_id = ?',
+      [course_id],
+      (error, results) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else {
+          console.log('userCoursesListByCourseId: results = ' + JSON.stringify(results));
+          resolve(results);
+        }
+      }
+    );
+  });
+}
+
+function userCoursesListByUserIdAndCourseId(user_id, course_id) {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'SELECT * FROM user_courses WHERE user_id = ? AND course_id = ?',
+      [user_id, course_id],
+      (error, results) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else {
+          console.log('userCoursesListByUserIdAndCourseId: results = ' + JSON.stringify(results));
+          resolve(results);
+        }
+      }
+    );
+  });
+}
+
+function userCoursesDelete(id) {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'DELETE FROM user_courses WHERE id = ?',
+      [id],
+      (error, results) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else {
+          console.log('userCoursesDelete: results = ' + JSON.stringify(results));
+          resolve();
+        }
+      }
+    );
+  });
+}
+
+function userCoursesDeleteByUserIdAndCourseId(user_id, course_id) {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'DELETE FROM user_courses WHERE user_id = ? AND course_id = ?',
+      [user_id, course_id],
+      (error, results) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else {
+          console.log('userCoursesDeleteByUserIdAndCourseId: results = ' + JSON.stringify(results));
+          resolve();
+        }
+      }
+    );
+  });
+}
+
+function userCoursesDeleteByCourseId(course_id) {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'DELETE FROM user_courses WHERE course_id = ?',
+      [course_id],
+      (error, results) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else {
+          console.log('userCoursesDeleteByCourseId: results = ' + JSON.stringify(results));
+          resolve();
+        }
+      }
+    );
+  });
+}
+
+function userCoursesDeleteByUserId(user_id) {
+  return new Promise((resolve, reject) => {
+    pool.query(
+      'DELETE FROM user_courses WHERE user_id = ?',
+      [user_id],
+      (error, results) => {
+        if (error) {
+          console.error(error);
+          reject(error);
+        } else {
+          console.log('userCoursesDeleteByUserId: results = ' + JSON.stringify(results));
+          resolve();
+        }
+      }
+    );
+
+  });
+}
+
 
 module.exports = {
   initializeDatabase,
   storeUser,
   getUserByEmail,
   getUserByName,
+  getUserByToken,
   isEmailVerified,
   storeVerificationToken,
   getVerificationToken,
@@ -662,8 +1187,10 @@ module.exports = {
   updateUserEmailVerified,
   storeRememberMeToken,
   getRememberMeTokenByEmail,
+  getRememberMeTokenByEmailToken,
   getUserByRememberMeToken,
-  updateRememberMeTokenexpires,
+  deleteRememberMeTokenByEmailToken,
+  updateRememberMeTokenExpires,
   storePasswordResetToken,
   getPasswordResetToken,
   updateUserPassword,

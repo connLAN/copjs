@@ -1,25 +1,57 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>learning</title>
-    <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f2f2f2;
-      background-image: url('snow.jpg');
-      background-repeat: no-repeat;
-      background-position: center center;
-      background-size: cover;
-      font-family: Arial, sans-serif;
-      font-size: 16px;
-      line-height: 1.5;
-      margin: 0;
-      padding: 0;
-    }
-    </style>
-  </head>
-  <body>
-    <h1>learning</h1>
-    <img src="snow.jpg" alt="screen pic 1">
-  </body>
+    <head>
+        <title>Video Player</title>
+        <style>
+            #video-container {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                grid-gap: 10px;
+            }
+
+            video {
+                width: 100%;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="video-container"></div>
+
+        <script>
+            const videoContainer = document.getElementById('video-container');
+
+            // Define an array of video file names and titles
+            const videos = [
+              { src: 'b1.webm', title: 'Video 1' },
+              { src: 'b2.webm', title: 'Video 2' },
+              { src: 'b3.webm', title: 'Video 3' },
+              { src: 'b4.webm', title: 'Video 4' },
+              { src: 'b5.webm', title: 'Video 5' },
+              { src: 'b6.webm', title: 'Video 6' },
+              { src: 'b7.webm', title: 'Video 7' },
+              { src: 'b8.webm', title: 'Video 8' },
+              { src: 'b9.webm', title: 'Video 9' },
+              { src: 'b10.webm', title: 'Video 10' },
+              { src: 'b11.webm', title: 'Video 11' },
+              { src: 'b12.webm', title: 'Video 12' }
+            ];
+
+            // Loop through the videos array and create a div element for each video
+            for (let i = 0; i < videos.length; i++) {
+              const videoDiv = document.createElement('div');
+
+              const title = document.createElement('h1');
+              title.textContent = videos[i].title;
+
+              const video = document.createElement('video');
+              video.src = 'video/' + videos[i].src;
+              video.controls = true;
+              video.controlsList = 'nodownload'; // Prevent downloading of video
+
+              videoDiv.appendChild(title);
+              videoDiv.appendChild(video);
+              videoContainer.appendChild(videoDiv);
+            }
+        </script>
+    </body>
 </html>

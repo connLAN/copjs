@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Get Cookies</title>
+</head>
+<body>
+
+    <h1>Get Cookies</h1>
+    <p id="cookies"></p>
+    <input type="button" value="Get Cookies" id="get-cookies">
+    <span id="cookie-value"></span>
+
+    <script>
+        function logCookies() {
+            const rememberMeCookie = document.cookie.split('; ').find(cookie => cookie.startsWith('rememberMe='));
+            if (rememberMeCookie) {
+                const cookieValue = rememberMeCookie.split('=')[1];
+                // decode cookie value
+                const decodedCookieValue = decodeURIComponent(cookieValue);
+                const { email, token, authType,auth } = JSON.parse(decodedCookieValue);
+
+
+                document.getElementById("cookie-value").innerHTML = decodedCookieValue 
+                    + "<br>" + email + "<br>" + token + "<br>" + authType + "<br>" + auth;
+            }
+        }
+
+        document.getElementById("get-cookies").addEventListener("click", function() {
+            logCookies();
+        });
+
+    </script>
+
+    <p>Back to index</p>
+</body>
+</html>

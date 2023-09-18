@@ -96,7 +96,7 @@ async function registerHandler(req, res) {
       console.log('User information stored');
   
       // Set a cookie to remember the user's email
-      res.cookie('email', email, { maxAge: 3600000, httpOnly: true, secure: true, sameSite: 'strict' });
+      // res.cookie('email', email, { maxAge: 3600000, httpOnly: true, secure: true, sameSite: 'strict' });
   
       // Generate a verification token for the user, write into the database , and sent it to the user's email address
       const token = crypto.randomBytes(16).toString('hex');

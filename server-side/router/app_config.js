@@ -7,6 +7,8 @@ const rootPath = path.normalize(__dirname + '/..');
 const htmlPath = path.join(rootPath, 'html');
 const publicPath = path.join(rootPath, 'public');
 const imgPath = path.join(publicPath, 'img');
+const cssPath = path.join(publicPath, 'css');
+const jsPath = path.join(publicPath, 'js');
 const routerPath = path.join(rootPath, 'router');
 const commonPath = path.join(rootPath, 'common');
 const databasePath = path.join(rootPath, 'database');
@@ -17,6 +19,8 @@ const cronPath = path.join(rootPath, 'cron');
 function serveStaticDirectories(app) {
     app.use(express.static(publicPath));
     app.use(express.static(imgPath));
+    app.use(express.static(cssPath));
+    app.use(express.static(jsPath));
     app.use(express.static(htmlPath));
     app.use(express.static(routerPath));
     app.use(express.static(commonPath));

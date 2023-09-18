@@ -17,8 +17,9 @@ const {
     serveStaticDirectories,
     appConfig
   } = require('./app_config');
-const { config } = require('process');
-const { updateRememberMeTokenexpires } = require('../database/database');
+const config = appConfig;
+
+const { updateRememberMeTokenExpires } = require('../database/database');
 
 const db = require(path.join(databasePath, '/database'));
 
@@ -56,60 +57,63 @@ async function checkRememberMeToken(req, res, email, token, expires) {
     const today = new Date();
 
     if (expires < today) {
-        // Delete token from remember_me table
+        // Delete token from rememberMe table
         try {
-            await db.deleteTokenByEmail(email);
-            console.log('Token deleted from remember_me table');
+            await db.deleteRememberMeTokenByEmailToken(email);
+            console.log('Token deleted from rememberMe table');
         } catch (error) {
             console.error(error);
             // res.status(500).send('Internal server error');
             return false;
         }
-        // Delete rememberMe cookie
-        res.clearCookie('rememberMe');
-        console.log('rememberMe cookie deleted');
-        // res.status(401).send('Your session has expired, please login again');
-        return false;
-    } 
 
-    // check if the token matches the one stored in the database
-    const user = await db.getUserByEmail(email);
-    if (user) {
-        const storedToken = await db.getRememberMeTokenByEmail(email);
-        if (storedToken) {
-            if (storedToken.token === token && storedToken.expires >= expires) {   
-                // Set session user with email and expires
-                req.session.user = { email: email, expires: expires };
-                // res.redirect('/dashboard');
-                return true;
-            } else {
-                // Delete token from remember_me table
-                try {
-                    await db.deleteTokenByEmail(email);
-                    console.log('Token deleted from remember_me table');
-                } catch (error) {
-                    console.error(error);
-                    // res.status(500).send('Internal server error');
-                    return false;
-                }
-                // Delete rememberMe cookie
-                res.clearCookie('rememberMe');
-                console.log('rememberMe cookie deleted');
-                // res.status(401).send('Your session has expired, please log in again');
+        // Delete rememberMe cookie
+        // res.clearCookie('rememberMe');
+        console.log('000 rememberMe cookie deleted');
+        return false;
+    }
+
+    // check if the token is in rememberMe table
+    const tokenInTable = await db.getRememberMeTokenByEmailToken(email, token);
+    if (tokenInTable) {
+        // check if the token has expired
+        const expiresInTable = tokenInTable.expires;
+        if (expiresInTable < today) {
+            // Delete token from rememberMe table
+            try {
+                await db.deleteRememberMeTokenByEmailToken(email, token);
+                console.log('Token deleted from rememberMe table');
+            } catch (error) {
+                console.error(error);
                 return false;
             }
-        } else {    
+
             // Delete rememberMe cookie
-            res.clearCookie('rememberMe');
-            console.log('rememberMe cookie deleted');
-            // res.status(401).send('Your session has expired, please log in again');
+            // res.clearCookie('rememberMe');
+            console.log('111 rememberMe cookie deleted');
             return false;
+        } else {
+            // update token expires
+            try {
+                await db.updateRememberMeTokenExpires(email, token, expires);
+                console.log('Token expires updated');
+            } catch (error) {
+                console.error(error);
+                return false;
+            }
+
+            // check is user exists
+            const user = await db.getUserByEmail(email);
+            if (user) {
+                return true;
+            }else{
+                return false;
+            }
         }
-    } else {
+    } else { // token not in rememberMe table
         // Delete rememberMe cookie
-        res.clearCookie('rememberMe');
-        console.log('rememberMe cookie deleted');
-        // res.status(401).send('Your session has expired, please log in again');
+        // res.clearCookie('rememberMe');
+        console.log('222 rememberMe cookie deleted');
         return false;
     }
 }
@@ -147,53 +151,140 @@ async function loginHandler(req, res) {
     }
 
     // check cookie rememberMe
-    if (req.cookies.rememberMe) {
+    if (req.cookies.rememberMe) { // remembeMe cookie exits
         const cookieData = JSON.parse(req.cookies.rememberMe);
-        if (cookieData.authType === 'rememberMe') {
+        console.log( "cookies.rememberMe: " + cookieData.email 
+            + " : " + cookieData.token 
+            + " : " + cookieData.expires
+            + " : " + cookieData.authType 
+            );
 
+        if (cookieData.authType === 'rememberMe') { // valid cookie
             const { email, token, expires } = cookieData;
-            const result = await checkRememberMeToken(req, res, email, token, new Date(expires));
-            if (result) {
-                if(isRememberMe){
-                    updateRememberMeTokenexpires(email, token, new Date(Date.now() + config.rememberMeCookieExpires));
-                }
+            console.log( "loginHandle ==>  cookies.rememberMe: " + email
+                + " : " + token
+                + " : " + expires
+                + " : " + cookieData.authType
+                );
 
+            const result = await checkRememberMeToken(req, res, email, token, new Date(expires));
+            if (result) {// valid rememberMe
+                if(isRememberMe){ // valid rememberMe and isRememberMe
+                    db.deleteRememberMeTokenByEmailToken(email,token);
+                    console.log('Token deleted from rememberMe table');
+
+                    // Set rememberMe cookie
+                    const cookieData = { 
+                        email: 'user@example.com', 
+                        token: 'abc123',
+                        authType: 'rememberMe',
+                        auth: true
+                    };
+
+                    const cookieOptions = {
+                        maxAge: 7 * 24 * 60 * 60 * 1000, // 1 week in milliseconds
+                        httpOnly: true,
+                        secure: true,
+                        sameSite: 'strict'
+                    };
+
+                    res.cookie('rememberMe', JSON.stringify(cookieData), cookieOptions);
+
+                    // update token in rememberMe table
+                    try {
+                        await db.updateRememberMeTokenExpires(email, token, expiresNew);
+                        console.log('updateRememberMeTokenExpires finished.');
+                    } catch (error) {
+                        console.error(error);
+                        res.status(500).send('Internal server error');
+                        return;
+                    }
+
+                    res.send('You have logged in already');
+                    return;
+                }
+            }else{ // invalid rememberMe
+                // Delete rememberMe cookie
+                // res.clearCookie('rememberMe');
+                console.log('rememberMe cookie deleted');
                 res.send('You have logged in already');
                 return;
             }
-        }else{
-            console.log('Invalid cookie authType');
+
+        }else{ // invalid remembeMe cookie
+            // Delete rememberMe cookie
+            // res.clearCookie('rememberMe');
+            console.log('rememberMe cookie deleted');
+            res.send('You have logged in already');
+            return;
+        }
+    }else{ // cookie doesn't exists, nop
+        console.log(`cookie doesn't exists, nop`);
+    }
+
+
+    // normal login process
+    console.log('normal login process, no cookies before --- --- ---');
+
+    // firstly, check if register email is verified
+    const user = await db.getUserByEmail(email);
+    if (user) {
+        console.log('user.email_verified = ' + user.email_verified);
+        if (!user.email_verified) {
+            res.status(401).send('Email not verified, please check your email');
+            return;
         }
     }
 
-    // normal login process
+    // check if the user and password is valid
     const isValid = await isValidUser(email, password);
     if (isValid) {
-        // Set session user with email and expires
-        req.session.user = { email: email, expires: new Date(Date.now() + 3600000) };
+        // Set session user with email and expires, authType, auth
+        req.session.user = { email: email, expires: new Date(Date.now() + 3600000) , authType: 'normal',auth: true};
         
         // Set rememberMe cookie
-        if (isRememberMe) {
-            const expiresNew = new Date(Date.now() + config.rememberMeCookieExpires);
+        if (isRememberMe) { // rememberMe is checked
+            const expiresNew = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
             const token = crypto.randomBytes(64).toString('hex');
-            const cookieData = { email: email, token: token, expires: expiresNew, authType: 'rememberMe' };
-            res.cookie('rememberMe', JSON.stringify(cookieData));
-            
-            // Store token in remember_me table
-            try {
-                await db.storeTokenByEmail(email, token, expires);
-                console.log('Token stored in remember_me table');
+            const cookieData = { 
+                email: 'user@example.com', 
+                token: 'abc123',
+                authType: 'rememberMe',
+                auth: true
+            };
+
+            const cookieOptions = {
+                maxAge: 7 * 24 * 60 * 60 * 1000, // 1 week in milliseconds
+                httpOnly: true,
+                secure: true,
+                sameSite: 'strict'
+            };
+
+            res.cookie('rememberMe', JSON.stringify(cookieData), cookieOptions);
+   
+            // Store token in rememberMe table
+            console.log("before storeRememberMeToken():" + email+ " : \n" + token +" : \n" + expiresNew);
+            db.storeRememberMeToken(email, token, expiresNew)
+            .then(() => {
+                console.log('Token stored successfully');
                 res.send('You are logged in');
-            } catch (error) {
-                console.error(error);
-                res.status(500).send('Internal server error');
                 return;
-            }
+              })
+              .catch((error) => {
+                console.error('Error storing token:', error);
+                res.status(501)(error);
+                return;
+              });
+        }else{  // rememberMe not checked
+            // Delete rememberMe cookie
+            // res.clearCookie('rememberMe');
+            console.log('delete rememberMe cookie if exists');
+            res.send('You are logged in');
+            return;
         }
 
-        // Redirect to dashboard
-        res.redirect('/dashboard');
-    } else {
+    } else { // invalid email or password.
+        console.log('44444444444444444');
         res.status(401).send('Invalid email or password');
     }
 }

@@ -33,7 +33,7 @@ function logoutHandler(req, res) {
         if (index !== -1) {
             rememberMeTokens.splice(index, 1);
         }
-        res.clearCookie('rememberMe');
+        // // res.clearCookie('rememberMe');
     }
 
     logoutOtherLogins(email);
