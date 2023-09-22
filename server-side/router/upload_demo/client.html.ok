@@ -1,13 +1,7 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Image Upload Demo</title>
-</head>
 <body>
-    <h1>Image Upload Demo</h1>
+    <h1>Image Upload</h1>
 
-    <form id="upload-form">
+    <form id="upload-form" enctype="multipart/form-data">
         <div>
             <label for="name">Name:</label>
             <input type="text" id="name" name="name" required>
@@ -20,7 +14,7 @@
 
         <div>
             <label for="image">Image:</label>
-            <input type="file" id="image" name="image" accept="image/*" required>
+            <input type="file" id="image" name="image" required>
         </div>
 
         <button type="submit">Upload</button>
@@ -45,16 +39,22 @@
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
-            .then(data => {
-                console.log(data);
-                alert(data.message);
+            .then((response) => {
+                alert(response.status + ' : ' + response.statusText);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                return response.json();
             })
-            .catch(error => {
-                console.error(error);
-                alert('An error occurred while uploading the image');
+            .then((data) => {
+                alert('Upload successful:', data);
+                console.log('Upload successful:', data);
+            })
+            .catch((error) => {
+                alert('Error uploading file:', error);
+                console.error('Error uploading file:', error);
             });
         });
     </script>
 </body>
-</html>

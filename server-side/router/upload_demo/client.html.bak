@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Image Upload Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            margin: 0;
+            padding: 20px;
+            background-color: #333;
+            color: #fff;
+        }
+
+        form {
+            margin: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        textarea {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        #image-dropzone {
+            border: 2px dashed #ccc;
+            padding: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #image-dropzone.active {
+            background-color: #eee;
+        }
+
+        #image-dropzone div {
+            margin-bottom: 10px;
+        }
+
+        #image-preview {
+            display: none;
+            max-width: 100%;
+            margin-bottom: 20px;
+        }
+
+        button[type="submit"] {
+            display: block;
+            padding: 10px;
+            background-color: #333;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #444;
+        }
+    </style>
+</head>
+<body>
+    <h1>Image Upload Demo</h1>
+
+    <form id="upload-form">
+        <div>
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+
+        <div>
+            <label for="description">Description:</label>
+            <textarea id="description" name="description" required></textarea>
+        </div>
+
+        <div>
+            <label for="image">Image:</label>
+            <div id="image-dropzone">
+                <div>Drag and drop image files here, or click to select files.</div>
+                <input type="file" id="image" name="image" accept="image/*" multiple>
+            </div>
+        </div>
+
+        <div>
+            <div id="image-preview-container"></div>
+        </div>
+
+        <button type="submit">Upload</button>
+    </form>
+
+    <script>
+        const form = document.getElementById('upload-form');
+        const imageDropzone = document.getElementById('image-dropzone');
+        const imageInput = document.getElementById('image');
+        const imagePreviewContainer = document.getElementById('image-preview-container');
+
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+
+            const name = document.getElementById('name').value;
+            const description = document.getElementById('description').value;
+            const images = document.getElementById('image').files;
+
+            if (!name || !description || !images || images.length === 0) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('description', description);
+
+            for (let i = 0; i < images.length; i++) {
+                const image = images[i];
+                formData.append('image[]', image, image.name);
+            }
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                alert(data.message);
+            })
+            .catch(error => {
+                console.error(error);
+                alert('An error occurred while uploading the images');
+            });
+        });
+
+        imageDropzone.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            event.dataTransfer.dropEffect = 'copy';
+            imageDropzone.classList.add('active');
+        });
+
+        imageDropzone.addEventListener('dragleave', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            imageDropzone.classList.remove('active');
+        });
+
+        imageDropzone.addEventListener('drop', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            imageDropzone.classList.remove('active');
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    if (file.type.match(/^image\//)) {
+                        const reader = new FileReader();
+                        reader.addEventListener('load', () => {
+                            const imagePreview = document.createElement('img');
+                            imagePreview.setAttribute('src', reader.result);
+                            imagePreview.setAttribute('alt', 'Image preview');
+                            imagePreview.setAttribute('style', 'max-width: 100%; margin-bottom: 20px;');
+                            imagePreviewContainer.appendChild(imagePreview);
+                        });
+                        reader.readAsDataURL(file);
+                    }
+                }
+                imageInput.files = files;
+            }
+        });
+
+        imageDropzone.addEventListener('click', () => {
+            imageInput.click();
+        });
+
+        imageInput.addEventListener('change', (event) => {
+            const files = event.target.files;
+            if (files.length > 0) {
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    if (file.type.match(/^image\//)) {
+                        const reader = new FileReader();
+                        reader.addEventListener('load', () => {
+                            const imagePreview = document.createElement('img');
+                            imagePreview.setAttribute('src', reader.result);
+                            imagePreview.setAttribute('alt', 'Image preview');
+                            imagePreview.setAttribute('style', 'max-width: 100%; margin-bottom: 20px;');
+                            imagePreviewContainer.appendChild(imagePreview);
+                        });
+                        reader.readAsDataURL(file);
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

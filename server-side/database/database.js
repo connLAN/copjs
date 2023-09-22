@@ -105,9 +105,10 @@ function initializeDatabase() {
       id INT NOT NULL AUTO_INCREMENT,
       name VARCHAR(255) NOT NULL,
       description TEXT NOT NULL,
-      price DECIMAL(10, 2) NOT NULL,
-      status VARCHAR(20) NOT NULL,
-      author VARCHAR(255) NOT NULL,
+      picurl VARCHAR(255) NOT NULL,
+      price DECIMAL(10, 2) NOT NULL DEFAULT 9999,
+      status VARCHAR(20) NOT NULL DEFAULT 'draft',
+      author VARCHAR(255) NOT NULL DEFAULT 'admin',
       timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (id)
     )
@@ -722,11 +723,11 @@ function timeout_delete_email_verification() {
 
 // todo: courses and lessions table and user_courses table functions.
 
-function addCourses(name, description, price) {
+function addCourse(name, description, author,image) {
   return new Promise((resolve, reject) => {
     pool.query(
-      'INSERT INTO courses (name, description, price) VALUES (?, ?, ?)',
-      [name, description, price],
+      'INSERT INTO courses (name, description, picurl,author) VALUES (?, ?, ?,?)',
+      [name, description, image, author],
       (error, results, fields) => {
         if (error) {
           console.error(error);
@@ -1197,7 +1198,30 @@ module.exports = {
   deletePasswordResetToken,
   logUserAction,
   timeout_delete_remember_me,
-  timeout_delete_email_verification
+  timeout_delete_email_verification,
+  addCourse,
+  coursesList,
+  getCourseById,
+  coursesUpdate,
+  coursesDelete,
+  addLessons,
+  lessonsList,
+  getLessonById,
+  lessonsUpdate,
+  lessonsDelete,
+  addOrder,
+  ordersList,
+  ordersListByCourseId,
+  ordersListByUserIdAndCourseId,
+  ordersDelete,
+  addCourseToUser,
+  userCoursesList,
+  userCoursesListByCourseId,
+  userCoursesListByUserIdAndCourseId,
+  userCoursesDelete,
+  userCoursesDeleteByUserIdAndCourseId,
+  userCoursesDeleteByCourseId,
+  userCoursesDeleteByUserId
 };
 
 

@@ -1,0 +1,57 @@
+const fs = require('fs');
+const path = require('path');
+const express = require('express');
+const multer = require('multer');
+
+const app = express();
+const upload = multer({ dest: 'uploads/' });
+
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'client.html'));
+});
+app.get('/test', (req, res) => {
+    res.sendFile(path.join(__dirname, 'client.html'));
+});
+
+app.post('/upload', upload.single('image'), (req, res) => {
+    const { name, description } = req.body;
+    const image = req.file;
+
+    console.log('upload:', name, description, image);
+
+    if (!name || !description || !image) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const uploadDir = path.join(__dirname, 'uploads');
+    const targetPath = path.join(uploadDir, image.originalname);
+    console.log(`targetPath = ` + targetPath);
+
+    const readStream = fs.createReadStream(image.path);
+    const writeStream = fs.createWriteStream(targetPath);
+
+    readStream.on('error', (err) => {
+        console.error('Error reading file:', err);
+        res.status(500).json({ error: 'Error reading file' });
+    });
+
+    writeStream.on('error', (err) => {
+        console.error('Error writing file:', err);
+        res.status(500).json({ error: 'Error writing file' });
+    });
+
+    writeStream.on('finish', () => {
+        console.log('File uploaded successfully');
+
+
+        res.status(200).json({ message: 'File uploaded successfully' });
+    });
+
+    readStream.pipe(writeStream);
+});
+
+app.listen(3000, () => {
+    console.log('Server started on port 3000');
+});

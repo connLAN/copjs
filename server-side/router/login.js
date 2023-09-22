@@ -121,6 +121,7 @@ async function checkRememberMeToken(req, res, email, token, expires) {
 
 async function loginHandler(req, res) {
     const { email, password, isRememberMe } = req.body;
+    console.log('loginHandler: ' + email + ' : ' + password + ' : ' + isRememberMe);
 
     // Validate input
     if (!email || !password) {
@@ -174,20 +175,24 @@ async function loginHandler(req, res) {
                     console.log('Token deleted from rememberMe table');
 
                     // Set rememberMe cookie
+                    const expiresNew = new Date(Date.now() + config.session.cookieExpires);
+                    console.log('@@@@@@@@@@ expiresNew: ' + expiresNew);
+
                     const cookieData = { 
-                        email: 'user@example.com', 
-                        token: 'abc123',
+                        email: email, 
+                        token: token,
                         authType: 'rememberMe',
+                        expires: expiresNew,
                         auth: true
                     };
-
+        
                     const cookieOptions = {
-                        maxAge: 7 * 24 * 60 * 60 * 1000, // 1 week in milliseconds
+                        maxAge: config.session.cookieExpires, // 1 month in milliseconds
                         httpOnly: true,
                         secure: true,
                         sameSite: 'strict'
                     };
-
+        
                     res.cookie('rememberMe', JSON.stringify(cookieData), cookieOptions);
 
                     // update token in rememberMe table
@@ -240,21 +245,33 @@ async function loginHandler(req, res) {
     const isValid = await isValidUser(email, password);
     if (isValid) {
         // Set session user with email and expires, authType, auth
-        req.session.user = { email: email, expires: new Date(Date.now() + 3600000) , authType: 'normal',auth: true};
+        req.session.user = { email: email,
+             expires: new Date(Date.now() + 3600000) , 
+             authType: 'normal',
+             auth: true};
         
         // Set rememberMe cookie
         if (isRememberMe) { // rememberMe is checked
-            const expiresNew = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+            const expiresNew = new Date(Date.now() + config.session.cookieExpires);
+            const dateNow = Date.now();
+            const  aaa= dateNow + config.session.cookieExpires;
+            console.log('###### dateNow: ' 
+                        + dateNow + ', config.session.cookieExpires: ' 
+                        + config.session.cookieExpires+ ', aaa =  ' + aaa );
+
+            console.log('###### expiresNew: ' + expiresNew);
+
             const token = crypto.randomBytes(64).toString('hex');
             const cookieData = { 
-                email: 'user@example.com', 
-                token: 'abc123',
+                email: email, 
+                token: token,
                 authType: 'rememberMe',
+                expires: expiresNew,
                 auth: true
             };
 
             const cookieOptions = {
-                maxAge: 7 * 24 * 60 * 60 * 1000, // 1 week in milliseconds
+                maxAge: config.session.cookieExpires, // 1 month in milliseconds
                 httpOnly: true,
                 secure: true,
                 sameSite: 'strict'
@@ -284,7 +301,7 @@ async function loginHandler(req, res) {
         }
 
     } else { // invalid email or password.
-        console.log('44444444444444444');
+        console.log('Invalid email or password , 44444444444444444');
         res.status(401).send('Invalid email or password');
     }
 }

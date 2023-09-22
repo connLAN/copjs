@@ -2,7 +2,7 @@ const express = require('express');
 const mysql = require('mysql2/promise');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
-const RedisStore = require('connect-redis').default;
+// const RedisStore = require('connect-redis').default;
 const path = require('path');
 
 
@@ -33,11 +33,17 @@ serveStaticDirectories(app);
 
 // Parse JSON and URL-encoded query parameters
 app.use(express.json());
+app.use(express.json({limit: '500mb'}));
+
 app.use(express.urlencoded({ extended: true }));
+
+
 app.use(cookieParser());
 
 const bodyParser = require('body-parser');
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: "500mb" }));
+app.use(bodyParser.urlencoded({ limit: "500mb",  extended: true }));
+
 
 function sessionHandler(app, config) {
   app.use(session({
@@ -85,9 +91,20 @@ const {
 app.post('/verify_reset_password', verifyResetPasswordHandler);
 app.post('/reset_password000', resetPasswordHandler);
 
-app.use(mainRouter.htmlRouter);
-app.use(mainRouter.notFoundHandler);
 
+//////////////////////////////////////
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/' });
+
+const courseRouter = require(path.join(routerPath, 'courses'));
+app.post('/addCourse', upload.single('image'), courseRouter.handleAddCourse);
+
+
+app.post('/logout', (req, res) => {
+  logoutHandler(req, res);
+});
+
+/////////////////////////////////////
 const { 
   logoutOtherLogins,
   logoutHandler
@@ -97,6 +114,35 @@ const {
 app.post('/logout', (req, res) => {
   logoutHandler(req, res);
 });
+
+/////////////////////////////////////
+
+
+app.use(mainRouter.htmlRouter);
+app.use(mainRouter.notFoundHandler);
+
+
+
+/*
+app.post('/logout_other_logins', (req, res) => {
+  logoutOtherLogins(req, res);
+});
+
+const multer = require('multer');
+// Configure multer middleware to handle file uploads
+const upload = multer({ dest: 'uploads/' });
+
+// Handle POST requests to /submit
+app.post('/addCourse', upload.single('image'), (req, res) => {
+  // req.body contains the form data
+  console.log(req.body);
+  // req.file contains information about the uploaded file
+  console.log(req.file);
+  res.send('Form submitted successfully');
+});
+
+*/
+
 
 
 require('./router/cron');

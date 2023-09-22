@@ -212,15 +212,15 @@
   </div>
   <div class="grid-item new-course">
     <h2>New Course</h2>
-    <form enctype="multipart/form-data"> 
+    <form>
       <label for="name">Name:</label>
       <input type="text" id="name" name="name" required>
 
       <label for="description">Description:</label>
       <textarea id="description" name="description" required></textarea>
 
-      <label for="image">Image:</label>
-      <input type="file" id="image" name="image" accept="image/*">
+      <!-- <label for="image">Image:</label>
+      <input type="file" id="image" name="image" accept="image/*"> -->
 
       <button type="submit">Create Course</button>
       <button type="button" class="cancel-btn">Cancel</button>
@@ -239,27 +239,22 @@
 
     const id_name = document.getElementById("name");
     const id_description = document.getElementById("description");
-    const id_image = document.getElementById("image");
-    alert("WITH IMAGE: "+ id_name.value +"  " +id_description.value + "  " +id_image.value);
+    alert(id_name.value,id_description.value);
 
   
-    const fileInput = document.getElementById('id_image');
-    const file = fileInput.files[0];
-    const data = new FormData();
-    data.append('name', id_name.value);
-    data.append('description', id_description.value);
-    data.append('author', 'admin');
-    data.append('image', file);
-  alert("data: " + JSON.stringify(data));
+    // Get the form data
+    const  data = {
+      name: id_name.value,
+      description: id_description.value,
+      author: 'admin',
+      image: 'my-image.jpg'
+    };
+    
 
     // Send a POST request to the server with the form data
     fetch('/addCourse', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        'Content-Type': 'application/json'
-      },
-      body: formData,
+      body: JSON.stringify(data),
     })
     .then(response => {
       alert(response.status + " " + response.statusText);
