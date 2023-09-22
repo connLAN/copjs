@@ -260,6 +260,11 @@ htmlRouter.get('/courses.html', (req, res) => {
   res.sendFile(path.join(htmlPath, 'courses.html'));
 });
 
+htmlRouter.get('/addCourse', (req, res) => {
+  res.sendFile(path.join(htmlPath, 'addCourse.html'));
+});
+
+
 htmlRouter.get('/order', (req, res) => {
   res.sendFile(path.join(htmlPath, 'order.html'));
 });

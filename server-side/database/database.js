@@ -726,7 +726,7 @@ function timeout_delete_email_verification() {
 function addCourse(name, description, author,image) {
   return new Promise((resolve, reject) => {
     pool.query(
-      'INSERT INTO courses (name, description, picurl,author) VALUES (?, ?, ?,?)',
+      'INSERT INTO courses (name, description, image,author) VALUES (?, ?, ?,?)',
       [name, description, image, author],
       (error, results, fields) => {
         if (error) {

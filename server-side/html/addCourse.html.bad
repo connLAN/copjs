@@ -189,43 +189,10 @@
   </head>
 <body>
   <header>
-    <h1>All Courses</h1>
+    <h1>Add Courses</h1>
   </header>
   
-  <div class="grid">
-    <div class="grid-item">
-      <h2>Course 1</h2>
-      <img src="course1.jpg" alt="Course 1">
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed euismod, velit euismod bibendum.</p>
-      <button class="release-btn">Release</button>
-      <button class="delete-btn">Delete</button>
-      <p class="status-text">Status: Released</p>
-    </div>
-    <div class="grid-item">
-      <h2>Course 2</h2>
-      <img src="course2.jpg" alt="Course 2">
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed euismod, velit euismod bibendum.</p>
-      <button class="release-btn">Release</button>
-      <button class="delete-btn">Delete</button>
-      <p class="status-text">Status: Unreleased</p>
-    </div>
-    <div class="grid-item">
-      <h2>Course 3</h2>
-      <img src="course3.jpg" alt="Course 3">
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed euismod, velit euismod bibendum.</p>
-      <button class="release-btn">Release</button>
-      <button class="delete-btn">Delete</button>
-      <p class="status-text">Status: Released</p>
-    </div>
-    <div class="grid-item">
-      <h2>Course 4</h2>
-      <img src="course4.jpg" alt="Course 4">
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed euismod, velit euismod bibendum.</p>
-      <button class="release-btn">Release</button>
-      <button class="delete-btn">Delete</button>
-      <p class="status-text">Status: Unreleased</p>
-    </div>
-  </div>
+
   <div class="grid-item new-course">
     <h2>New Course</h2>
     <form enctype="multipart/form-data"> 
@@ -235,10 +202,13 @@
       <label for="description">Description:</label>
       <textarea id="description" name="description" required></textarea>
 
-      <div class="dropzone">
+      <div class="grid-item dropzone">
         <p>Drag and drop an image file here or click to select a file</p>
-        <img id="preview" src="#" alt="Preview">
         <input type="file" id="image" name="image" accept="image/*" required>
+      </div>
+      
+      <div class="grid-item">
+        <img id="preview" src="#" alt="Preview" style="width: 200px; height: 200px;"> 
       </div>
 
       <button type="submit">Create Course</button>
@@ -250,8 +220,10 @@
     // get email from local storage
     const email = localStorage.getItem('email');
     if (!email) {
-      // if email is not set, redirect to login page
+      alert('You must be logged in to view this page');
       location.href = '/login';
+    }else{
+      alert('Current user is: ' + email);
     }
 
     // Get the form element
@@ -262,6 +234,8 @@
 
     // Get the preview image element
     const preview = document.querySelector('#preview');
+    const fileInput = document.getElementById('image');
+    const image = document.getElementById('image').files[0];
 
     // Add a dragover event listener to the dropzone
     dropzone.addEventListener('dragover', (event) => {
@@ -289,12 +263,10 @@
 
       reader.readAsDataURL(file);
 
-      const input = document.getElementById('image');
-      input.files = event.dataTransfer.files;
+      fileInput.files = event.dataTransfer.files;
     });
 
     // Add a change event listener to the file input
-    const fileInput = document.getElementById('image');
     fileInput.addEventListener('change', (event) => {
       const file = event.target.files[0];
       const reader = new FileReader();
@@ -306,12 +278,10 @@
       reader.readAsDataURL(file);
     });
 
-    // Add a click event listener to the image
-    const image = document.querySelector('.grid-item img');
-    image.addEventListener('click', (event) => {
+    // Add a click event listener to the dropzone
+    dropzone.addEventListener('click', (event) => {
       event.preventDefault();
-      const input = document.getElementById('image');
-      input.click();
+      fileInput.click();
     });
 
     // Add a drop event listener to the image
@@ -326,8 +296,7 @@
 
       reader.readAsDataURL(file);
 
-      const input = document.getElementById('image');
-      input.files = event.dataTransfer.files;
+      fileInput.files = event.dataTransfer.files;
     });
 
     // Add a change event listener to the file input
@@ -349,12 +318,11 @@
 
       const name = document.getElementById('name').value;
       const description = document.getElementById('description').value;
-      const image = document.getElementById('image').files[0];
 
       const formData = new FormData();
       formData.append('name', name);
       formData.append('description', description);
-      formData.append('author', '');
+      formData.append('author', email);
       formData.append('image', image);
 
       // Send a POST request to the server with the form data
@@ -363,18 +331,23 @@
         body: formData,
       })
       .then(response => {
+        alert(response.status + " : " + response.statusText);
         if (response.ok) {
-          // If the response is OK, reload the page to show the new course
-          location.reload();
+          // If the response is OK, reset this page
+          form.reset();
+          return;
         } else {
           // If the response is not OK, display an error message
-          alert('Error creating course');
+          alert('Error creating course' + response.body.toString());
+          return;
         }
       })
       .catch(error => {
         // If there is an error, display an error message
         alert(error);
+        return;
       });
+
     });
   </script>
 

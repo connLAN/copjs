@@ -249,6 +249,9 @@
 
               // Redirect to the welcome page
               // alert(" REDIRECTING  TO dashboard PAGE");
+              // store email in local storage
+              localStorage.setItem('email', user.email);
+              
               window.location.href = '/dashboard';
             } else {
 
