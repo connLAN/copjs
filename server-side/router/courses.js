@@ -1,8 +1,5 @@
 const path = require('path');
 const express = require('express');
-const fs = require('fs');
-const router = express.Router();
-const addCourseRouter = express.Router();
 
 const {
     rootPath,
@@ -19,15 +16,18 @@ const {
   } = require('./app_config');
 const config = appConfig;
 
+const db = require(path.join(databasePath, 'database'));
 
-
-
-
-
-function handleListCourse(req, res) {
+async function handleListCourse(req, res) {
+    db.coursesList()
+        .then(result => {
+            res.json(result);
+        })
+        .catch(error => {
+            res.status(500).json({ error });
+        });
 }
 
-courseRouter
 
 module.exports = {
     handleListCourse

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Courses List</title>
+  <style>
+      /* Reset styles */
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      /* Body styles */
+      body {
+        font-family: Arial, sans-serif;
+        font-size: 16px;
+        line-height: 1.5;
+        background-image: url("snow.jpg");
+      }
+
+      /* Header styles */
+      header {
+        background-color: #333;
+        color: #fff;
+        padding: 1rem;
+      }
+
+      header h1 {
+        font-size: 2rem;
+        margin: 0;
+      }
+
+      /* Grid styles */
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        grid-gap: 2rem;
+        margin: 2rem;
+      }
+
+      .grid-item {
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        padding: 1rem;
+      }
+
+      .grid-item h2 {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .grid-item img {
+        max-width: 100%;
+        height: auto;
+        margin-bottom: 0.5rem;
+      }
+
+      .grid-item p {
+        margin-bottom: 0.5rem;
+      }
+
+      .grid-item button {
+        background-color: #333;
+        border: none;
+        border-radius: 3px;
+        color: #fff;
+        cursor: pointer;
+        font-size: 1rem;
+        padding: 0.5rem 1rem;
+        transition: background-color 0.3s ease;
+        margin-left: 10px;
+        margin-right: 10px;
+      }
+
+      .grid-item button:hover {
+        background-color: #555;
+      }
+
+      
+
+
+  </style>
+</head>
+<body>
+  <h1>Courses List</h1>
+
+  <div class="grid">
+    <!-- Courses will be dynamically added here -->
+  </div>
+
+  <script>
+    // Fetch courses data from server-side database
+    fetch('/listCourses')
+      .then(response => response.json())
+      .then(courses => {
+        // Loop through courses and add them to the page
+        courses.forEach(course => {
+          const courseElement = document.createElement('div');
+          courseElement.classList.add('grid-item');
+
+          const imageElement = document.createElement('img');
+          imageElement.src = course.image;
+          imageElement.alt = course.name;
+          courseElement.appendChild(imageElement);
+
+          const nameElement = document.createElement('h2');
+          nameElement.textContent = course.name;
+          courseElement.appendChild(nameElement);
+
+          const descriptionElement = document.createElement('p');
+          descriptionElement.textContent = course.description;
+          courseElement.appendChild(descriptionElement);
+
+          const priceElement = document.createElement('p');
+          priceElement.classList.add('price');
+          priceElement.textContent = `Price: ${course.price || 1234}`;
+          courseElement.appendChild(priceElement);
+
+          const releaseButton = document.createElement('button');
+          releaseButton.classList.add('release-btn');
+          releaseButton.textContent = 'Release';
+          courseElement.appendChild(releaseButton);
+
+          const deleteButton = document.createElement('button');
+          deleteButton.classList.add('delete-btn');
+          deleteButton.textContent = 'Delete';
+          courseElement.appendChild(deleteButton);
+
+          const statusElement = document.createElement('p');
+          statusElement.classList.add('status-text');
+          statusElement.textContent = `Status: ${course.status}`;
+          courseElement.appendChild(statusElement);
+
+          document.querySelector('.grid').appendChild(courseElement);
+        });
+      })
+      .catch(error => console.error(error));
+  </script>
+</body>
+</html>

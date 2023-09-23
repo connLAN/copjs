@@ -1,10 +1,21 @@
 const path = require('path');
 const fs = require('fs');
 
+
 const {
+    rootPath,
+    htmlPath,
+    publicPath,
     imgPath,
+    uploadPath,
+    routerPath,
+    commonPath,
     databasePath,
-  } = require('./app_config');
+    configPath,
+    cronPath,
+    serveStaticDirectories,
+    appConfig
+} = require('./app_config');
 
 const multer = require('multer');
 
@@ -48,7 +59,7 @@ async function processUpload(name, description, image) {
         throw new Error('Missing required fields');
     }
 
-    const uploadDir = path.join(__dirname, 'uploads');
+    const uploadDir = path.join(publicPath, 'uploads');
 
     try {
             const targetPath = path.join(uploadDir, image.originalname);
@@ -70,6 +81,7 @@ async function processUpload(name, description, image) {
 }
 
 function addCourse( name, description, author, image) {
+
     return new Promise((resolve, reject) => {
         db.addCourse(name, description, author, image)
             .then(result => {

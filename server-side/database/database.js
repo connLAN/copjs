@@ -103,7 +103,7 @@ function initializeDatabase() {
     sql = `
     CREATE TABLE IF NOT EXISTS courses (
       id INT NOT NULL AUTO_INCREMENT,
-      name VARCHAR(255) NOT NULL,
+      name VARCHAR(255) NOT NULL UNIQUE,
       description TEXT NOT NULL,
       picurl VARCHAR(255) NOT NULL,
       price DECIMAL(10, 2) NOT NULL DEFAULT 9999,
@@ -744,8 +744,7 @@ function addCourse(name, description, author,image) {
 function coursesList() {
   return new Promise((resolve, reject) => {
     pool.query(
-      'SELECT * FROM courses',
-      (error, results) => {
+      `SELECT *, CONCAT("http://${config.web.domain}:${config.port}/uploads/", image) AS image FROM courses`,      (error, results) => {
         if (error) {
           console.error(error);
           reject(error);
@@ -755,7 +754,7 @@ function coursesList() {
       }
     );
   });
-} 
+}
 
 function getCourseById(id) {
   return new Promise((resolve, reject) => {
@@ -1043,6 +1042,7 @@ function addCourseToUser(user_id, course_id) {
           resolve(results);
         }
       }
+
     );
   });
 }

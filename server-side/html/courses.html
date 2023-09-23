@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8">
-    <title>All Courses</title>
-    <style>
+<head>
+  <title>Courses List</title>
+  <style>
       /* Reset styles */
       * {
         box-sizing: border-box;
@@ -56,7 +55,6 @@
         max-width: 100%;
         height: auto;
         margin-bottom: 0.5rem;
-        cursor: pointer;
       }
 
       .grid-item p {
@@ -72,311 +70,178 @@
         font-size: 1rem;
         padding: 0.5rem 1rem;
         transition: background-color 0.3s ease;
+        margin-left: 10px;
+        margin-right: 10px;
       }
 
       .grid-item button:hover {
         background-color: #555;
       }
 
-      /* Add new course styles */
-      .add-new-course {
-        background-color: #fff;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-        margin: 2rem;
-        padding: 1rem;
-        text-align: center;
+      .grid-item .upload-btn {
+        background-color: #4CAF50;
       }
 
-      .add-new-course a {
-        background-color: #333;
-        border: none;
-        border-radius: 3px;
-        color: #fff;
-        cursor: pointer;
-        display: inline-block;
-        font-size: 1rem;
-        padding: 0.5rem 1rem;
-        text-decoration: none;
-        transition: background-color 0.3s ease;
+      .grid-item .upload-btn:hover {
+        background-color: #3e8e41;
       }
 
-      .add-new-course a:hover {
-        background-color: #555;
+      .grid-item .upload-btn:active {
+        background-color: #3e8e41;
+        box-shadow: 0 5px #666;
+        transform: translateY(4px);
       }
 
-      .new-course {
-        background-color: #f5f5f5;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-        margin: 2rem;
-        padding: 1rem;
-        text-align: center;
+      .grid-item .upload-btn:focus {
+        outline: none;
       }
 
-      .new-course h2 {
-        font-size: 1.5rem;
-        margin-bottom: 1rem;
+      .grid-item .upload-btn:disabled {
+        background-color: #ccc;
+        color: #666;
+        cursor: not-allowed;
       }
 
-      .new-course form {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+      .grid-item .upload-btn:disabled:hover {
+        background-color: #ccc;
       }
 
-      .new-course label {
-        font-size: 1.2rem;
-        margin-bottom: 0.5rem;
+      .grid-item .upload-text {
+        margin-top: 0.5rem;
       }
 
-      .new-course input[type="file"] {
-        display: none;
-      }
-
-      .new-course .dropzone {
+      .grid-item .drop-zone {
         border: 2px dashed #ccc;
         border-radius: 5px;
-        padding: 2rem;
-        margin-bottom: 1rem;
+        padding: 1rem;
+        margin-top: 1rem;
         cursor: pointer;
       }
 
-      .new-course .dropzone:hover {
-        background-color: #f5f5f5;
+      .grid-item .drop-zone:hover {
+        background-color: #f9f9f9;
       }
 
-      .new-course .dropzone p {
-        font-size: 1.2rem;
-        margin-bottom: 0.5rem;
-      }
-
-      .new-course .dropzone img {
-        max-width: 100%;
-        height: auto;
-        margin-bottom: 0.5rem;
-      }
-
-      .new-course button {
-        background-color: #333;
-        border: none;
-        border-radius: 3px;
-        color: #fff;
-        cursor: pointer;
-        font-size: 1rem;
-        padding: 0.5rem 1rem;
-        transition: background-color 0.3s ease;
+      .grid-item .drop-zone .preview {
+        display: flex;
+        flex-wrap: wrap;
         margin-top: 1rem;
       }
 
-      .new-course button:hover {
-        background-color: #555;
+      .grid-item .drop-zone .preview img, .grid-item .drop-zone .preview video {
+        width: 100px;
+        height: 100px;
+        margin-right: 1rem;
+        margin-bottom: 1rem;
       }
 
-      .new-course .cancel-btn {
-        background-color: #ccc;
-        color: #333;
-        margin-left: 1rem;
+      .grid-item .drop-zone .upload-button {
+        margin-top: 1rem;
       }
-
-      .new-course .cancel-btn:hover {
-        background-color: #999;
-      }
-
-    </style>
-  </head>
+  </style>
+</head>
 <body>
-  <header>
-    <h1>All Courses</h1>
-  </header>
-  
+  <h1>Courses List</h1>
+
   <div class="grid">
-    <div class="grid-item">
-      <h2>Course 1</h2>
-      <img src="course1.jpg" alt="Course 1">
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed euismod, velit euismod bibendum.</p>
-      <button class="release-btn">Release</button>
-      <button class="delete-btn">Delete</button>
-      <p class="status-text">Status: Released</p>
-    </div>
-    <div class="grid-item">
-      <h2>Course 2</h2>
-      <img src="course2.jpg" alt="Course 2">
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed euismod, velit euismod bibendum.</p>
-      <button class="release-btn">Release</button>
-      <button class="delete-btn">Delete</button>
-      <p class="status-text">Status: Unreleased</p>
-    </div>
-    <div class="grid-item">
-      <h2>Course 3</h2>
-      <img src="course3.jpg" alt="Course 3">
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed euismod, velit euismod bibendum.</p>
-      <button class="release-btn">Release</button>
-      <button class="delete-btn">Delete</button>
-      <p class="status-text">Status: Released</p>
-    </div>
-    <div class="grid-item">
-      <h2>Course 4</h2>
-      <img src="course4.jpg" alt="Course 4">
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed euismod, velit euismod bibendum.</p>
-      <button class="release-btn">Release</button>
-      <button class="delete-btn">Delete</button>
-      <p class="status-text">Status: Unreleased</p>
-    </div>
-  </div>
-  <div class="grid-item new-course">
-    <h2>New Course</h2>
-    <form enctype="multipart/form-data"> 
-      <label for="name">Name:</label>
-      <input type="text" id="name" name="name" required>
-
-      <label for="description">Description:</label>
-      <textarea id="description" name="description" required></textarea>
-
-      <div class="dropzone">
-        <p>Drag and drop an image file here or click to select a file</p>
-        <img id="preview" src="#" alt="Preview">
-        <input type="file" id="image" name="image" accept="image/*" required>
-      </div>
-
-      <button type="submit">Create Course</button>
-      <button type="button" class="cancel-btn">Cancel</button>
-    </form>
+    <!-- Courses will be dynamically added here -->
   </div>
 
   <script>
-    // get email from local storage
-    const email = localStorage.getItem('email');
-    if (!email) {
-      // if email is not set, redirect to login page
-      location.href = '/login';
-    }
+    // Fetch courses data from server-side database
+    fetch('/listCourses')
+      .then(response => response.json())
+      .then(courses => {
+        // Loop through courses and add them to the page
+        courses.forEach(course => {
+          const courseElement = document.createElement('div');
+          courseElement.classList.add('grid-item');
 
-    // Get the form element
-    const form = document.querySelector('.new-course form');
+          const imageElement = document.createElement('img');
+          imageElement.src = course.image;
+          imageElement.alt = course.name;
+          courseElement.appendChild(imageElement);
 
-    // Get the dropzone element
-    const dropzone = document.querySelector('.dropzone');
+          const nameElement = document.createElement('h2');
+          nameElement.textContent = course.name;
+          courseElement.appendChild(nameElement);
 
-    // Get the preview image element
-    const preview = document.querySelector('#preview');
+          const descriptionElement = document.createElement('p');
+          descriptionElement.textContent = course.description;
+          courseElement.appendChild(descriptionElement);
 
-    // Add a dragover event listener to the dropzone
-    dropzone.addEventListener('dragover', (event) => {
-      event.preventDefault();
-      dropzone.classList.add('dragover');
-    });
+          const priceElement = document.createElement('p');
+          priceElement.classList.add('price');
+          priceElement.textContent = `Price: ${course.price || 1234}`;
+          courseElement.appendChild(priceElement);
 
-    // Add a dragleave event listener to the dropzone
-    dropzone.addEventListener('dragleave', (event) => {
-      event.preventDefault();
-      dropzone.classList.remove('dragover');
-    });
+          const dropZone = document.createElement('div');
+          dropZone.classList.add('drop-zone');
+          dropZone.textContent = 'Drag and drop files here or click to browse';
 
-    // Add a drop event listener to the dropzone
-    dropzone.addEventListener('drop', (event) => {
-      event.preventDefault();
-      dropzone.classList.remove('dragover');
+          const preview = document.createElement('div');
+          preview.classList.add('preview');
+          dropZone.appendChild(preview);
 
-      const file = event.dataTransfer.files[0];
-      const reader = new FileReader();
+          const uploadText = document.createElement('p');
+          uploadText.classList.add('upload-text');
+          uploadText.textContent = 'No lessons uploaded';
+          courseElement.appendChild(uploadText);
 
-      reader.addEventListener('load', () => {
-        preview.src = reader.result;
-      });
+          courseElement.appendChild(dropZone);
 
-      reader.readAsDataURL(file);
+          const uploadButton = document.createElement('button');
+          uploadButton.classList.add('lession-manage-button');
+          uploadButton.textContent = 'Upload';
+          uploadButton.disabled = true;
+          courseElement.appendChild(uploadButton);
 
-      const input = document.getElementById('image');
-      input.files = event.dataTransfer.files;
-    });
+          // Add event listener to upload button
+          uploadButton.addEventListener('click', () => {
+            // Implement file upload functionality here
+            console.log('Uploading files...');
+          });
 
-    // Add a change event listener to the file input
-    const fileInput = document.getElementById('image');
-    fileInput.addEventListener('change', (event) => {
-      const file = event.target.files[0];
-      const reader = new FileReader();
+          // Add event listener to drop zone
+          dropZone.addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.multiple = true;
+            input.accept = 'image/*,video/*';
+            input.style.display = 'none';
+            document.body.appendChild(input);
+            input.click();
+            input.addEventListener('change', () => {
+              const files = Array.from(input.files);
+              preview.innerHTML = '';
+              files.forEach(file => {
+                if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+                  const reader = new FileReader();
+                  reader.readAsDataURL(file);
+                  reader.onload = () => {
+                    const mediaElement = file.type.startsWith('image/') ? document.createElement('img') : document.createElement('video');
+                    mediaElement.src = reader.result;
+                    mediaElement.controls = true;
+                    if (file.type.startsWith('video/')) {
+                      mediaElement.setAttribute('width', '320');
+                      mediaElement.setAttribute('height', '240');
+                    }
+                    preview.appendChild(mediaElement);
+                  };
+                } else {
+                  const p = document.createElement('p');
+                  p.textContent = `${file.name} is not a valid image or video file`;
+                  preview.appendChild(p);
+                }
+              });
+              uploadButton.disabled = false;
+            });
+          });
 
-      reader.addEventListener('load', () => {
-        preview.src = reader.result;
-      });
-
-      reader.readAsDataURL(file);
-    });
-
-    // Add a click event listener to the image
-    const image = document.querySelector('.grid-item img');
-    image.addEventListener('click', (event) => {
-      event.preventDefault();
-      const input = document.getElementById('image');
-      input.click();
-    });
-
-    // Add a drop event listener to the image
-    image.addEventListener('drop', (event) => {
-      event.preventDefault();
-      const file = event.dataTransfer.files[0];
-      const reader = new FileReader();
-
-      reader.addEventListener('load', () => {
-        image.src = reader.result;
-      });
-
-      reader.readAsDataURL(file);
-
-      const input = document.getElementById('image');
-      input.files = event.dataTransfer.files;
-    });
-
-    // Add a change event listener to the file input
-    fileInput.addEventListener('change', (event) => {
-      const file = event.target.files[0];
-      const reader = new FileReader();
-
-      reader.addEventListener('load', () => {
-        image.src = reader.result;
-      });
-
-      reader.readAsDataURL(file);
-    });
-
-    // Add a submit event listener to the form
-    form.addEventListener('submit', (event) => {
-      // Prevent the default form submission behavior
-      event.preventDefault();
-
-      const name = document.getElementById('name').value;
-      const description = document.getElementById('description').value;
-      const image = document.getElementById('image').files[0];
-
-      const formData = new FormData();
-      formData.append('name', name);
-      formData.append('description', description);
-      formData.append('author', '');
-      formData.append('image', image);
-
-      // Send a POST request to the server with the form data
-      fetch('/addCourse', {
-        method: 'POST',
-        body: formData,
+          document.querySelector('.grid').appendChild(courseElement);
+        });
       })
-      .then(response => {
-        if (response.ok) {
-          // If the response is OK, reload the page to show the new course
-          location.reload();
-        } else {
-          // If the response is not OK, display an error message
-          alert('Error creating course');
-        }
-      })
-      .catch(error => {
-        // If there is an error, display an error message
-        alert(error);
-      });
-    });
+      .catch(error => console.error(error));
   </script>
-
 </body>
 </html>

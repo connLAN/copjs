@@ -97,6 +97,8 @@ app.post('/reset_password000', resetPasswordHandler);
 const {addCourseRouter} = require(path.join(routerPath + '/addCourse'));
 app.use(addCourseRouter);
 
+const { handleListCourse } = require(path.join(routerPath + '/courses'));
+app.get('/listCourses', handleListCourse);
 
 app.post('/logout', (req, res) => {
   logoutHandler(req, res);

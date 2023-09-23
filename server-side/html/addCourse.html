@@ -124,6 +124,15 @@
 </form>
 
 <script>
+  function getCurrentEmail() {
+    return localStorage.getItem('email');
+  }
+  if (getCurrentEmail() == null) {
+    window.location.href = '/login';
+  }
+
+  const email = getCurrentEmail();
+
   const form = document.getElementById('upload-form');
   const button = document.querySelector('button[type="submit"]');
   const fileUpload = document.querySelector('.file-upload');
@@ -140,7 +149,7 @@
       return;
     }
 
-    alert('submit');
+    // alert('submit');
     // trigger submit event
     form.dispatchEvent(new Event('submit'));
   });
@@ -204,22 +213,20 @@
   form.addEventListener('submit', (event) => {
     event.preventDefault();
 
-    alert('submit');
     const name = document.getElementById('name').value;
     const description = document.getElementById('description').value;
     const images = imageInput.files;
-    alert('submit 2');
 
     const formData = new FormData();
     formData.append('name', name);
     formData.append('author', 'admin');
     formData.append('description', description);
-    alert('submit 3, images.length = ' + images.length );
+    
+    // alert('submit 3, images.length = ' + images.length );
 
     if (images.length > 0) {
       formData.append('image', images[0]);
     }
-    alert('submit 4');
 
     fetch('/a000', {
       method: 'POST',
